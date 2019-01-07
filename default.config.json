@@ -1,5 +1,6 @@
 {
 	"token":		 "<MFA TOKEN>",
+	"query":		 "has=image&has=file&has=embed&has=link&has=video&include_nsfw=true",
 	"servers":		 {
 		"<SERVER 1 ID>": [
 			"<SERVER 1 CHANNEL 1 ID>",
