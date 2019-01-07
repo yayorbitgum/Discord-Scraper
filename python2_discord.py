@@ -16,13 +16,6 @@ from os import path, makedirs, getcwd
 from json import loads as json_load
 from sys import stderr, stdout
 from threading import Thread
-from random import choice
-
-# Set our filename appropriate character set for files with duplicate filenames.
-# Select a random string from our character set.
-
-charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
-randoms = lambda length: ''.join(choice(charset) for i in range(length))
 
 '''
 ''  Discord Class
@@ -108,21 +101,12 @@ class Discord:
         for messages in json['messages']:
             for i in range(len(messages)):
                 for attachment in messages[i]['attachments']:
-                    file_data.append([attachment['url'], attachment['filename']])
-
-        # Remove duplicate files.
-        seen = set()
-        new_data = []
-
-        for item in file_data:
-            t = tuple(item)
-            if t not in seen:
-                new_data.append(item)
-                seen.add(t)
+                    file_data.append(attachment['url'])
 
         # Download the files.
-        for url, filename in new_data:
-            file_location = path.join(getcwd(), 'Discord Scrapes', server_id, channel_id, '{0}({1}).{2}'.format('.'.join(filename.split('.')[:-1]), randoms(10), filename.split('.')[-1]))
+        for url in new_data:
+            filename = '{}_{}'.format(url.split('/')[-2], url.split('/')[-1])
+            file_location = path.join(getcwd(), 'Discord Scrapes', server_id, channel_id, '{0}'.format('.'.join(filename))
             self.grabFile(file_location, url)
 
     '''
