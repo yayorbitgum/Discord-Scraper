@@ -104,9 +104,9 @@ class Discord:
                     file_data.append(attachment['url'])
 
         # Download the files.
-        for url in new_data:
+        for url in file_data:
             filename = '{}_{}'.format(url.split('/')[-2], url.split('/')[-1])
-            file_location = path.join(getcwd(), 'Discord Scrapes', server_id, channel_id, '{0}'.format('.'.join(filename))
+            file_location = path.join(getcwd(), 'Discord Scrapes', server_id, channel_id, '{0}'.format(filename))
             self.grabFile(file_location, url)
 
     '''
