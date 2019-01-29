@@ -7,12 +7,12 @@
 
   "servers":  {
     "SERVER ID 1": [
-      "SERVER ID 1 CHANNEL ID 1",
-	  "SERVER ID 1 CHANNEL ID 2"
+	"SERVER ID 1 CHANNEL ID 1",
+	"SERVER ID 1 CHANNEL ID 2"
     ],
     "SERVER ID 2": [
-      "SERVER ID 2 CHANNEL ID 1",
-	  "SERVER ID 2 CHANNEL ID 2"
+	"SERVER ID 2 CHANNEL ID 1",
+	"SERVER ID 2 CHANNEL ID 2"
     ]
   }
 }
