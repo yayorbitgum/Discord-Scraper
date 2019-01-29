@@ -173,7 +173,7 @@ class DiscordRequest:
 
                     if message['content'] != '':
                         if 'texts' in self.types:
-                            textlink.append(': '.join(['#'.join([message['author']['username'], message['author']['discriminator']]), message['content']]))
+                            textlink.append(': '.join([message['author']['id'], message['content']]))
 
 
         with open('{0}\\{1}_{2}_text.csv'.format(filepath, self.server, self.channel), 'a') as textfile:

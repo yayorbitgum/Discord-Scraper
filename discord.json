@@ -1,6 +1,6 @@
 {
   "token":  "TOKEN",
-  "pages":  0,
+  "pages":  200,
   "query":  "has=image&has=file&has=embed&has=link&has=video&include_nsfw=true",
   "agent":  "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) discord/0.0.301 Chrome/56.0.2924.87 Discord/1.6.15 Safari/537.36",
   "types":  "images,videos,embeds,files,texts",
