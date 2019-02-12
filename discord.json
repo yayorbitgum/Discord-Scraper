@@ -1,18 +1,18 @@
 {
-  "token":  "TOKEN",
+  "token":  "",
   "pages":  200,
   "query":  "has=image&has=file&has=embed&has=link&has=video&include_nsfw=true",
   "agent":  "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) discord/0.0.301 Chrome/56.0.2924.87 Discord/1.6.15 Safari/537.36",
-  "types":  "images,videos,embeds,files,texts",
+  "types":  "image,video,file,text",
 
   "servers":  {
-    "SERVER ID 1": [
-	"SERVER ID 1 CHANNEL ID 1",
-	"SERVER ID 1 CHANNEL ID 2"
+    "server 1 id": [
+      "server 1 channel 1 id",
+      "server 1 channel 2 id"
     ],
-    "SERVER ID 2": [
-	"SERVER ID 2 CHANNEL ID 1",
-	"SERVER ID 2 CHANNEL ID 2"
-    ]
+	"server 2 id": [
+	  "server 2 channel 1 id",
+	  "server 2 channel 2 id"
+	]
   }
 }
