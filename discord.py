@@ -158,7 +158,7 @@ class DiscordScraper:
 
     def download(self, url, folder):
         try:
-            request = Request({'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.90 Safari/537.36'})
+            request = Request({'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.90 Safari/537.36', 'cookie': '__cfduid=d13e75ae0431ec770f2a0e1ca6e73e8d71560897192'})
             filename = safe_name('%s_%s' % (url.split('/')[-2], url.split('/')[-1]))
 
             binary_data = request.grab_page(url, True)
