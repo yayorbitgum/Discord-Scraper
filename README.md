@@ -4,7 +4,9 @@ Release Date: November 14, 2017 @ 05:00 UTC-0
 
 Creation Date: October 3, 2017 @ 10:13 UTC-0
 
-# Discord App Tutorial
+# Configuring
+
+## Start here if you're using the Discord desktop application:
 
 Step 1:
 Open your Discord app and enter the app settings.
@@ -15,64 +17,43 @@ Traverse to Appearance and enable Developer Mode if it is disabled.
 ![35zu4Wt.png](https://i.imgur.com/35zu4Wt.png "Step 2a")
 ![YEad6fw.png](https://i.imgur.com/YEad6fw.png "Step 2b")
 
+## Start here if you're not using the Discord desktop application:
+
 Step 3:
 Close the app settings and press CTRL + SHIFT + I to open the Developer panel.
 
 Step 4:
-Expand the Local Storage area on the left-side of the Developer panel.
-Copy the value of "token" into the discord.json file.
-![Z7SHpYs.png](https://i.imgur.com/Z7SHpYs.png "Step 4a")
-![5tekl6c.png](https://i.imgur.com/5tekl6c.png "Step 4b")
+Go to the Network tab and select from any personal message or server in your list.
+Copy the value of "authorization" into the discord.json file.
+![kzix1jI.png](https://i.imgur.com/kzix1jI.png "Step 4a")
+![AeCWWkp.png](https://i.imgur.com/AeCWWkp.png "Step 4b")
 
 Step 5:
 Close the Developer panel and right-click on the server icon and copy ID.
 Paste the server ID into the discord.json file.
 ![32VP97z.png](https://i.imgur.com/32VP97z.png "Step 5a")
-![NXQM9zx.png](https://i.imgur.com/NXQM9zx.png "Step 5b")
+![9Ev2dxU.png](https://i.imgur.com/9Ev2dxU.png "Step 5b")
 
 Step 6:
 Right-click on the channel name and copy ID.
 Paste the channel ID into the discord.json file.
 ![okhdZtQ.png](https://i.imgur.com/okhdZtQ.png "Step 6a")
-![vTD8zL4.png](https://i.imgur.com/vTD8zL4.png "Step 6b")
+![ZcdqQfr.png](https://i.imgur.com/ZcdqQfr.png "Step 6b")
 
 Step 7:
-Run the script to start the downloading process.
-
-# Discord Website Tutorial
-
-Step 1:
-Login to your Discord account.
-![Gr1b8NZ.png](https://i.imgur.com/Gr1b8NZ.png "Step 1")
-
-Step 2:
-Press CTRL + SHIFT + I to open the Developer Tools panel.
-
-Step 3:
-Expand the Local Storage area on the left-side of the Developer Tools panel.
-Copy the value of "token" into the discord.json file.
-![Z7SHpYs.png](https://i.imgur.com/Z7SHpYs.png "Step 3a")
-![5tekl6c.png](https://i.imgur.com/5tekl6c.png "Step 3b")
-
-Step 4:
-Close the Developer Tools panel and right-click on the server icon and copy ID.
-Paste the server ID into the discord.json file.
-![qGB3IXJ.png](https://i.imgur.com/qGB3IXJ.png "Step 4a")
-![NXQM9zx.png](https://i.imgur.com/NXQM9zx.png "Step 4b")
-
-Step 5:
-Right-click on the channel name and copy ID.
-Paste the channel ID into the discord.json file.
-![6gO2LPF.png](https://i.imgur.com/6gO2LPF.png "Step 5a")
-![vTD8zL4.png](https://i.imgur.com/vTD8zL4.png "Step 5b")
-
-Step 6:
 Run the script to start the downloading process.
 
 # Note
 **You can copy in multiple channels on multiple servers if you want to.**
 
 # Changelog (DD-MM-YYYY)
+
+18-06-2019 - Maintenance Update:
+* Updated the README to update the token gathering method.
+* Updated the README to remove unnecessary image use.
+* Added personal/direct message channel option in JSON file.
+* Removed page count option from the JSON file.
+* Updated the wiki for this repository.
 
 29-01-2019 - Overhaul:
 * Merged Python 2 and Python 3 functionality into a single file.

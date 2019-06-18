@@ -1,98 +1,82 @@
-"""
-The modules (imports)
-
-The os module will be used to create directories and delete files.
-The sys module will be used to output text without being messed up by threading.
-The json module will be used to convert a JSON (JavaScript Object Notation) string to a Python dictionary.
-The unicodedata module will be used to handle those nasty UCS2 encoded characters that don't play well with UTF/ISO-8859-1 encoded files.
-The threading module will be used to run this script's functions on multiple software threads (increasing system resource usage for faster runtime).
-The random module will be used to generate the random alphanumeric values by the random_string lambda function.
-"""
-from os import path, makedirs, getcwd, remove
-from sys import stderr, stdout, version_info
+from time import time, gmtime, strptime, mktime, timezone
 from json import loads as json_to_array
+from os import path, makedirs, getcwd
+from sys import stderr, version_info
 from unicodedata import normalize
-from threading import Thread
+from mimetypes import MimeTypes
 from random import choice
 
-"""
-The global variable
+random_string = lambda length: ''.join([choice('0123456789ABCDEF') for i in range(length)])
+fix_utf_error = lambda string: normalize('NFKC', string).encode('iso-8859-1', 'ignore').decode('iso-8859-1')
+py3_url_split = lambda    url: [url.split('/')[2], '/%s' % '/'.join(url.split('/')[3::])]
+get_snowflake = lambda timems: (timems - 1420070400000) << 22
+get_timestamp = lambda sflake: ((sflake >> 22) + 1420070400000) / 1000.0
+get_mimetype  = lambda string: MimeTypes().guess_type(string)[0]
+get_tstruct   = lambda string: strptime(string, '%d %m %Y %H:%M:%S')
+get_tzoffset  = lambda hour:   hour + (timezone / 3600) - 1
 
-textlink will be an array/list to keep track of the current page of textual contents since threading is screwy (appending duplicates ad infinitum making for excessively large filesizes when grabbing channel text).
-imagetypes will be an array/list to keep track of the allowed image file extensions (again the future mimetype implementation will make this obsolete).
-videotypes will be an array/list to keep track of the allowed video file extensions (again the future mimetype implementation will make this obsolete).
-"""
-textlink = ['id,server_id,channel_id,timestamp,author_id,author_name,content,embeds']
+def get_day(day, month, year):
+    min_ts = mktime(get_tstruct('%02d %02d %d 00:00:00' % (day, month, year))) * 1000
+    max_ts = (mktime(get_tstruct('%02d %02d %d 00:00:00' % (day, month, year))) + 86400.0) * 1000
 
-imagetypes = [
-    'jpg', 'jpeg', 'png', 'gif',
-    'tiff', 'tif', 'bmp', 'tga',
-    'webp', 'apng'
-]
+    return [
+        get_snowflake(int(min_ts)),
+        get_snowflake(int(max_ts))
+    ]
 
-videotypes = [
-    'ogv', 'webm', 'mp4', 'mp2',
-    'mpeg', 'mkv', 'bnk', 'avi',
-    'h264', 'h265', 'wmv', 'raw',
-    'vob', 'mpg'
-]
+def safe_name(folder):
+    output = ""
 
-"""
-The anonymous functions (lambda functions)
+    for char in folder:
+        if char in '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-_+=.,`~!@#$%^&':
+            output = '%s%s' % (output, char)
 
-random_string(length):  This function should return a random alphanumeric value of length 'length' when called.
-fix_utf_errors(string): This function should return a string that is safe to write in an ISO-8859-1 encoded file.
-py3_url_split(url):     This function should return a single-dimensional dictionary which is used by http.client to make server requests.
-"""
-random_string = lambda length: ''.join([choice('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789') for i in range(length)])
-fix_utf_errors = lambda string: normalize('NFKC', string).encode('iso-8859-1', 'ignore').decode('iso-8859-1')
-py3_url_split = lambda url: [url.split('/')[2], '/{0}'.format('/'.join(url.split('/')[3::]))]
+    return output
+            
 
-"""
-Website Request class
+def create_query_body(**kwargs):
+    query = ""
 
-This portion of the script is what allows us to make web requests without
-needing to worry about creating separate scripts for Python 2.7 and Python 3
-compatibility like I did in the past commits.
+    for key, val in kwargs.items():
+        if val == True and key != 'nsfw':
+            query = '%s&has=%s' % (query, key[0:-1])
+            
+        if key == 'nsfw':
+            query = '%s&include_nsfw=%s' % (query, str(val).lower())
+            
+    return query
 
-You can simply reuse this portion of the script if you were wanting to make
-a web scraper that works with Python 2.7 and Python 3 interpreters. I don't
-have any interest in supporting older versions of Python 2 and if we ever
-get a Python 4 release, then I'll be sure to make updates to this portion
-of the script.
-"""
-if version_info[0] == 3:
+if version_info.major == 3:
     from http.client import HTTPSConnection
 
     class Request:
-        def __init__(self, headers):
+        def __init__(self, headers = {}):
             self.headers = headers
 
-        def grab_page(self, url, binary=False, error='Received HTTP {0} error when gathering JSON data.\n'):
+        def grab_page(self, url, binary = False):
             domain, path = py3_url_split(url)
             conn = HTTPSConnection(domain, 443)
             conn.request('GET', path, headers=self.headers)
 
             resp = conn.getresponse()
-            if resp.status == 200:
+            if str(resp.status)[0] == '2':
                 return resp.read() if binary else json_to_array(resp.read())
             else:
-                stderr.write(error.format(resp.status))
-                stdout.write(resp.read().decode('iso-8859-1'))
-                return ''
+                stderr.write('Received HTTP %s error: %s' % (resp.status, resp.reason))
+                return None
 
-
-elif version_info[0] == 2 and version_info[1] >= 7:
+elif version_info.major == 2 and version_info.minor >= 7:
     from urllib2 import build_opener, install_opener, urlopen, HTTPError
 
     class Request:
-        def __init__(self, headers):
+        def __init__(self, headers = {}):
             self.headers = headers
 
-        def grab_page(self, url, binary=False, error='Received HTTP {0} error when gathering JSON data.\n'):
+        def grab_page(self, url, binary = False):
             opener_headers = []
-            for k, v in zip(self.headers.keys(), self.headers.values()):
-                opener_headers.append((k, v.encode('iso-8859-1')))
+
+            for key, val in self.headers.items():
+                opener_headers.append((key, val.encode('iso-8859-1')))
 
             opener = build_opener()
             opener.addheaders = opener_headers
@@ -100,149 +84,164 @@ elif version_info[0] == 2 and version_info[1] >= 7:
 
             try:
                 return urlopen(url).read() if binary else json_to_array(urlopen(url).read())
+            
             except HTTPError as err:
-                stderr.write(error.format(err.code))
-                return ''
+                stderr.write('Received HTTP %s error: %s' % (err.code, err.reason))
 
 else:
-    stderr.write('Unsupported version of Python detected!')
+    stderr.write('Python %s.%s is not supported in this script.' % (version_info.major, version_info.minor))
     exit(1)
 
-"""
-Discord Scraper class
-
-This class will serve the purpose of grabbing data from Discord's servers.
-You can still make requests to other web servers without this class.
-
-If you were to make updates to this script to work with future versions of
-the Discord API, this would be the class you need to modify.
-
-The current API version of Discord from the time of this script: v6
-"""
-
 class DiscordScraper:
-    def __init__(self):
-        with open('discord.json', 'r') as config_file:
+    def __init__(self, jsonfile = 'discord.json'):
+        with open(jsonfile, 'r') as config_file:
             config = json_to_array(config_file.read())
 
-        self.pages = config['pages']
-        self.query = config['query']
-        self.types = config['types'].replace(' ', '').split(',')
-        self.header = {'user-agent': config['agent'], 'authorization': config['token']}
+        self.headers = {
+            'user-agent': config['agent'],
+            'authorization': config['token']
+        }
+
+        self.types = config['types']
+        self.query = create_query_body(
+            images = config['query']['images'],
+            files  = config['query']['files' ],
+            embeds = config['query']['embeds'],
+            links  = config['query']['links' ],
+            videos = config['query']['videos'],
+            nsfw   = config['query']['nsfw'  ]
+        )
+
+        self.directs = config['directs']
         self.servers = config['servers']
 
-    def get_server_name_by_id(self, server_id):
-        request = Request(self.header)
-        server_data = request.grab_page('https://discordapp.com/api/v6/guilds/{0}'.format(server_id))
+    def get_server_name_by_id(self, server):
+        request = Request(self.headers)
+        server_data = request.grab_page('https://discordapp.com/api/v6/guilds/%s' % server)
 
         if len(server_data) > 0:
-            return server_data['name']
+            return safe_name(server_data['name'])
         else:
-            random_name = random_string(12)
-            stderr.write('Unable to fetch server name from id, so we\'ll be using {0} instead.'.format(random_name))
-            return random_name
+            stderr.write('Unable to fetch server name from id, defaulting to a randomly generated name instead.')
+            return random_string(12)
 
-    def get_channel_name_by_id(self, channel_id):
-        request = Request(self.header)
-        channel_data = request.grab_page('https://discordapp.com/api/v6/channels/{0}'.format(channel_id))
+    def get_channel_name_by_id(self, channel):
+        request = Request(self.headers)
+        channel_data = request.grab_page('https://discordapp.com/api/v6/channels/%s' % channel)
 
         if len(channel_data) > 0:
-            return channel_data['name']
+            return safe_name(channel_data['name'])
         else:
-            random_name = random_string(12)
-            stderr.write('Unable to fetch channel name from id, so we\'ll be using {0} instead.'.format(random_name))
-            return random_name
+            stderr.write('Unable to fetch channel name from id, defaulting to a randomly generated name instead.')
+            return random_string(12)
 
-    def create_folders(self, server_id, channel_id):
-        if not path.exists(path.join(getcwd(), 'Discord Scrapes', self.get_server_name_by_id(server_id), self.get_channel_name_by_id(channel_id))):
-            makedirs(path.join(getcwd(), 'Discord Scrapes', self.get_server_name_by_id(server_id), self.get_channel_name_by_id(channel_id)))
+    def create_folders(self, server, channel):
+        folder = path.join(getcwd(), 'Discord Scrapes', server, channel)
 
-        return path.join(getcwd(), 'Discord Scrapes', self.get_server_name_by_id(server_id), self.get_channel_name_by_id(channel_id))
+        if not path.exists(folder):
+            makedirs(folder)
 
-    def grab_data(self, page):
-        threads = []
+        return folder
 
+    def download(self, url, folder):
+        request = Request({'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.90 Safari/537.36'})
+        filename = safe_name('%s_%s' % (url.split('/')[-2], url.split('/')[-1]))
+
+        binary_data = request.grab_page(url, True)
+        if len(binary_data) > 0:
+            with open(path.join(folder, filename), 'wb') as bin:
+                bin.write(binary_data)
+
+        else:
+            stderr.write('Failed to grab contents of %s' % url)
+
+    def grab_data(self):
+        for dmname, dmchannel in self.directs.items():
+            folder = self.create_folders('Direct Messages', dmname)
+            tzdata = gmtime(time())
+
+            if self.types['text'] == True:
+                with open(path.join(folder, 'messages.csv'), 'w') as log:
+                    log.write('channel,messageid,message,timestamp,userid,nickname')
+
+            for year in range(tzdata.tm_year, 2015, -1):
+                for month in range(12, 1, -1):
+                    for day in range(31, 1, -1):
+                        if month > tzdata.tm_mon: continue
+                        if month == tzdata.tm_mon and day > tzdata.tm_mday: continue
+                                
+                        try:
+                            min_id, max_id = get_day(day, month, year)
+                                    
+                            request = Request(self.headers)
+                            contents = request.grab_page('https://discordapp.com/api/v6/channels/%s/messages/search?min_id=%s&max_id=%s&%s' % (dmchannel, min_id, max_id, self.query))
+                            for messages in contents['messages']:
+                                for message in messages:
+                                            
+                                    for attachment in message['attachments']:
+                                        if self.types['images'] == True:
+                                            if get_mimetype(attachment['url']).split('/')[0] == 'image':
+                                                self.download(attachment['url'], folder)
+
+                                        if self.types['videos'] == True:
+                                            if get_mimetype(attachment['url']).split('/')[0] == 'video':
+                                                self.download(attachment['url'], folder)
+
+                                        if self.types['files'] == True:
+                                            if get_mimetype(attachment['url']).split('/')[0] not in ['image', 'video']:
+                                                self.download(attachment['url'], folder)
+
+                                    if self.types['text'] == True:
+                                        with open(path.join(folder, 'messages.csv'), 'a') as log:
+                                            log.write('\n%s,%s,%s,%s,%s,%s#%s' % (dmchannel, message['id'], message['content'].replace(',', ';').replace('\n', ' '), message['timestamp'], message['author']['id'], message['author']['username'].replace(',', ';'), message['author']['discriminator']))
+                                                    
+                        except ValueError:
+                            continue
+                                
         for server in self.servers.keys():
             for channels in self.servers.values():
                 for channel in channels:
-                    folder = self.create_folders(server, channel)
-                    request = Request(self.header)
-                    contents = request.grab_page('https://discordapp.com/api/v6/guilds/{0}/messages/search?channel_id={1}&offset={2}&{3}'.format(server, channel, 25 * page, self.query))
+                    folder = self.create_folders(self.get_server_name_by_id(server), self.get_channel_name_by_id(channel))
+                    tzdata = gmtime(time())
 
-                    for messages in contents['messages']:
-                        filelink = []
+                    if self.types['text'] == True:
+                        with open(path.join(folder, 'messages.csv'), 'w') as log:
+                            log.write('server,channel,messageid,message,timestamp,userid,nickname')
 
-                        for message in messages:
-                            for attachment in message['attachments']:
-                                if 'image' in self.types and attachment['filename'].split('.')[-1] in imagetypes:
-                                    filelink.append(attachment['url'])
-                                if 'video' in self.types and attachment['filename'].split('.')[-1] in videotypes:
-                                    filelink.append(attachment['url'])
-                                if 'file' in self.types and attachment['filename'].split('.')[-1] not in imagetypes and videotypes:
-                                    filelink.append(attachment['url'])
+                    for year in range(tzdata.tm_year, 2015, -1):
+                        for month in range(12, 1, -1):
+                            for day in range(31, 1, -1):
+                                if month > tzdata.tm_mon: continue
+                                if month == tzdata.tm_mon and day > tzdata.tm_mday: continue
+                                
+                                try:
+                                    min_id, max_id = get_day(day, month, year)
+                                    
+                                    request = Request(self.headers)
+                                    contents = request.grab_page('https://discordapp.com/api/v6/guilds/%s/messages/search?channel_id=%s&min_id=%s&max_id=%s&%s' % (server, channel, min_id, max_id, self.query))
+                                    for messages in contents['messages']:
+                                        for message in messages:
+                                            
+                                            for attachment in message['attachments']:
+                                                if self.types['images'] == True:
+                                                    if get_mimetype(attachment['url']).split('/')[0] == 'image':
+                                                        self.download(attachment['url'], folder)
 
-                            if 'text' in self.types:
-                                if len(message['embeds']) > 0:
-                                    embed_urls = []
+                                                if self.types['videos'] == True:
+                                                    if get_mimetype(attachment['url']).split('/')[0] == 'video':
+                                                        self.download(attachment['url'], folder)
 
-                                    for embed in message['embeds']:
-                                        embed_urls.append(embed['url'])
+                                                if self.types['files'] == True:
+                                                    if get_mimetype(attachment['url']).split('/')[0] not in ['image', 'video']:
+                                                        self.download(attachment['url'], folder)
 
-                                    embed_data = ';'.join(embed_urls)
-                                else: embed_data = 'null'
-
-                                if(len(fix_utf_errors(message['content']).replace(',', '.').replace('\r', ' ').replace('\n', ' ')) > 0):
-                                    textdata = fix_utf_errors(message['content']).replace(',', '.').replace('\r', ' ').replace('\n', ' ')
-                                else: textdata = 'null'
-
-                                object = [message['id'], server, message['channel_id'], message['timestamp'], message['author']['id'], '#'.join([fix_utf_errors(message['author']['username']), message['author']['discriminator']]), textdata, embed_data]
-                                textlink.append(','.join(object))
-
-                        for file in filelink:
-                            t = Thread(target=self.download_binary, args=(file, folder, ))
-                            threads.append(t)
-
-        for thread in threads:
-            thread.start()
-            thread.join()
-
-        del threads[:]
-
-    def download_binary(self, url, folder):
-        request = Request({'user-agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Safari/537.36'})
-        filename = '{0}_{1}'.format(url.split('/')[-2], url.split('/')[-1])
-
-        binary_data = request.grab_page(url, True, 'Received HTTP {0} error when gathering binary data for \'%s\'.\n' % url)
-        if len(binary_data) > 0:
-            with open(path.join(folder, filename), 'wb') as binary:
-                binary.write(binary_data)
-
-    def download_log(self, folder):
-        if path.exists(path.join(folder, 'channels.csv')):
-            remove(path.join(folder, 'channels.csv'))
-
-        with open(path.join(folder, 'channels.csv'), 'a') as csv:
-            for text in textlink:
-                csv.write('{0}\n'.format(text))
-
-"""
-The start of this script.
-
-No matter how you decide to run this script, this portion should be the first one called.
-This makes it easier for me to sort out non-class functions from the start of the script.
-"""
+                                            if self.types['text'] == True:
+                                                with open(path.join(folder, 'messages.csv'), 'a') as log:
+                                                    log.write('\n%s,%s,%s,%s,%s,%s,%s#%s' % (server, channel, message['id'], message['content'].replace(',', ';').replace('\n', ' '), message['timestamp'], message['author']['id'], message['author']['username'].replace(',', ';'), message['author']['discriminator']))
+                                                    
+                                except ValueError:
+                                    continue
+                                
 if __name__ == '__main__':
     ds = DiscordScraper()
-    threads = []
-
-    for i in range(ds.pages):
-        t = Thread(target=ds.grab_data, args=(i, ))
-        threads.append(t)
-
-    for thread in threads:
-        thread.start()
-        thread.join()
-
-    ds.download_log(path.join(getcwd(), 'Discord Scrapes'))
-    del threads[:]
-    del textlink[:]
+    ds.grab_data()
