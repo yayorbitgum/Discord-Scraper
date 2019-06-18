@@ -54,16 +54,19 @@ if version_info.major == 3:
             self.headers = headers
 
         def grab_page(self, url, binary = False):
-            domain, path = py3_url_split(url)
-            conn = HTTPSConnection(domain, 443)
-            conn.request('GET', path, headers=self.headers)
+            try:
+                domain, path = py3_url_split(url)
+                conn = HTTPSConnection(domain, 443)
+                conn.request('GET', path, headers=self.headers)
 
-            resp = conn.getresponse()
-            if str(resp.status)[0] == '2':
-                return resp.read() if binary else json_to_array(resp.read())
-            else:
-                stderr.write('Received HTTP %s error: %s' % (resp.status, resp.reason))
-                return None
+                resp = conn.getresponse()
+                if str(resp.status)[0] == '2':
+                    return resp.read() if binary else json_to_array(resp.read())
+                else:
+                    stderr.write('Received HTTP %s error: %s' % (resp.status, resp.reason))
+
+            except Exception:
+                stderr.write('Unknown exception occurred when grabing page contents.')
 
 elif version_info.major == 2 and version_info.minor >= 7:
     from urllib2 import build_opener, install_opener, urlopen, HTTPError
@@ -73,20 +76,23 @@ elif version_info.major == 2 and version_info.minor >= 7:
             self.headers = headers
 
         def grab_page(self, url, binary = False):
-            opener_headers = []
-
-            for key, val in self.headers.items():
-                opener_headers.append((key, val.encode('iso-8859-1')))
-
-            opener = build_opener()
-            opener.addheaders = opener_headers
-            install_opener(opener)
-
             try:
+                opener_headers = []
+
+                for key, val in self.headers.items():
+                    opener_headers.append((key, val.encode('iso-8859-1')))
+
+                opener = build_opener()
+                opener.addheaders = opener_headers
+                install_opener(opener)
+                
                 return urlopen(url).read() if binary else json_to_array(urlopen(url).read())
             
             except HTTPError as err:
                 stderr.write('Received HTTP %s error: %s' % (err.code, err.reason))
+
+            except Exception:
+                stderr.write('Unknown exception occurred when grabing page contents.')
 
 else:
     stderr.write('Python %s.%s is not supported in this script.' % (version_info.major, version_info.minor))
@@ -116,24 +122,32 @@ class DiscordScraper:
         self.servers = config['servers']
 
     def get_server_name_by_id(self, server):
-        request = Request(self.headers)
-        server_data = request.grab_page('https://discordapp.com/api/v6/guilds/%s' % server)
+        try:
+            request = Request(self.headers)
+            server_data = request.grab_page('https://discordapp.com/api/v6/guilds/%s' % server)
 
-        if len(server_data) > 0:
-            return safe_name(server_data['name'])
-        else:
+            if len(server_data) > 0:
+                return safe_name(server_data['name'])
+            else:
+                stderr.write('Unable to fetch server name from id, defaulting to a randomly generated name instead.')
+                return random_string(12)
+        except:
             stderr.write('Unable to fetch server name from id, defaulting to a randomly generated name instead.')
             return random_string(12)
 
     def get_channel_name_by_id(self, channel):
-        request = Request(self.headers)
-        channel_data = request.grab_page('https://discordapp.com/api/v6/channels/%s' % channel)
+        try:
+            request = Request(self.headers)
+            channel_data = request.grab_page('https://discordapp.com/api/v6/channels/%s' % channel)
 
-        if len(channel_data) > 0:
-            return safe_name(channel_data['name'])
-        else:
+            if len(channel_data) > 0:
+                return safe_name(channel_data['name'])
+            else:
+                stderr.write('Unable to fetch channel name from id, defaulting to a randomly generated name instead.')
+                return random_string(12)
+        except:
             stderr.write('Unable to fetch channel name from id, defaulting to a randomly generated name instead.')
-            return random_string(12)
+            return random_string(12) 
 
     def create_folders(self, server, channel):
         folder = path.join(getcwd(), 'Discord Scrapes', server, channel)
@@ -144,15 +158,17 @@ class DiscordScraper:
         return folder
 
     def download(self, url, folder):
-        request = Request({'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.90 Safari/537.36'})
-        filename = safe_name('%s_%s' % (url.split('/')[-2], url.split('/')[-1]))
+        try:
+            request = Request({'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.90 Safari/537.36'})
+            filename = safe_name('%s_%s' % (url.split('/')[-2], url.split('/')[-1]))
 
-        binary_data = request.grab_page(url, True)
-        if len(binary_data) > 0:
-            with open(path.join(folder, filename), 'wb') as bin:
-                bin.write(binary_data)
-
-        else:
+            binary_data = request.grab_page(url, True)
+            if len(binary_data) > 0:
+                with open(path.join(folder, filename), 'wb') as bin:
+                    bin.write(binary_data)
+            else:
+                stderr.write('Failed to grab contents of %s' % url)
+        except:
             stderr.write('Failed to grab contents of %s' % url)
 
     def grab_data(self):
@@ -197,6 +213,9 @@ class DiscordScraper:
                                                     
                         except ValueError:
                             continue
+
+                        except Exception:
+                            continue
                                 
         for server in self.servers.keys():
             for channels in self.servers.values():
@@ -240,6 +259,9 @@ class DiscordScraper:
                                                     log.write('\n%s,%s,%s,%s,%s,%s,%s#%s' % (server, channel, message['id'], message['content'].replace(',', ';').replace('\n', ' '), message['timestamp'], message['author']['id'], message['author']['username'].replace(',', ';'), message['author']['discriminator']))
                                                     
                                 except ValueError:
+                                    continue
+
+                                except Exception:
                                     continue
                                 
 if __name__ == '__main__':
