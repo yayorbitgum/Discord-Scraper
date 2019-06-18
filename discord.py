@@ -11,7 +11,7 @@ fix_utf_error = lambda string: normalize('NFKC', string).encode('iso-8859-1', 'i
 py3_url_split = lambda    url: [url.split('/')[2], '/%s' % '/'.join(url.split('/')[3::])]
 get_snowflake = lambda timems: (timems - 1420070400000) << 22
 get_timestamp = lambda sflake: ((sflake >> 22) + 1420070400000) / 1000.0
-get_mimetype  = lambda string: MimeTypes().guess_type(string)[0]
+get_mimetype  = lambda string: MimeTypes().guess_type(string)[0] if len(MimeTypes().guess_type(string)) > 0 else 'application/octet-stream'
 get_tstruct   = lambda string: strptime(string, '%d %m %Y %H:%M:%S')
 get_tzoffset  = lambda hour:   hour + (timezone / 3600) - 1
 
