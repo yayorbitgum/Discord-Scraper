@@ -1,4 +1,4 @@
-from time import time, gmtime, strptime, mktime, timezone
+from time import time, gmtime, strptime, mktime
 from json import loads as json_to_array
 from os import path, makedirs, getcwd
 from sys import stderr, version_info
@@ -13,7 +13,6 @@ get_snowflake = lambda timems: (timems - 1420070400000) << 22
 get_timestamp = lambda sflake: ((sflake >> 22) + 1420070400000) / 1000.0
 get_mimetype  = lambda string: MimeTypes().guess_type(string)[0] if len(MimeTypes().guess_type(string)) > 0 else 'application/octet-stream'
 get_tstruct   = lambda string: strptime(string, '%d %m %Y %H:%M:%S')
-get_tzoffset  = lambda hour:   hour + (timezone / 3600) - 1
 
 def get_day(day, month, year):
     min_ts = mktime(get_tstruct('%02d %02d %d 00:00:00' % (day, month, year))) * 1000
@@ -63,10 +62,10 @@ if version_info.major == 3:
                 if str(resp.status)[0] == '2':
                     return resp.read() if binary else json_to_array(resp.read())
                 else:
-                    stderr.write('Received HTTP %s error: %s' % (resp.status, resp.reason))
+                    stderr.write('\nReceived HTTP %s error: %s' % (resp.status, resp.reason))
 
             except Exception:
-                stderr.write('Unknown exception occurred when grabing page contents.')
+                stderr.write('\nUnknown exception occurred when grabing page contents.')
 
 elif version_info.major == 2 and version_info.minor >= 7:
     from urllib2 import build_opener, install_opener, urlopen, HTTPError
@@ -89,13 +88,13 @@ elif version_info.major == 2 and version_info.minor >= 7:
                 return urlopen(url).read() if binary else json_to_array(urlopen(url).read())
             
             except HTTPError as err:
-                stderr.write('Received HTTP %s error: %s' % (err.code, err.reason))
+                stderr.write('\nReceived HTTP %s error: %s' % (err.code, err.reason))
 
             except Exception:
-                stderr.write('Unknown exception occurred when grabing page contents.')
+                stderr.write('\nUnknown exception occurred when grabing page contents.')
 
 else:
-    stderr.write('Python %s.%s is not supported in this script.' % (version_info.major, version_info.minor))
+    stderr.write('\nPython %s.%s is not supported in this script.' % (version_info.major, version_info.minor))
     exit(1)
 
 class DiscordScraper:
@@ -129,10 +128,10 @@ class DiscordScraper:
             if len(server_data) > 0:
                 return safe_name(server_data['name'])
             else:
-                stderr.write('Unable to fetch server name from id, defaulting to a randomly generated name instead.')
+                stderr.write('\nUnable to fetch server name from id, defaulting to a randomly generated name instead.')
                 return random_string(12)
         except:
-            stderr.write('Unable to fetch server name from id, defaulting to a randomly generated name instead.')
+            stderr.write('\nUnable to fetch server name from id, defaulting to a randomly generated name instead.')
             return random_string(12)
 
     def get_channel_name_by_id(self, channel):
@@ -143,10 +142,10 @@ class DiscordScraper:
             if len(channel_data) > 0:
                 return safe_name(channel_data['name'])
             else:
-                stderr.write('Unable to fetch channel name from id, defaulting to a randomly generated name instead.')
+                stderr.write('\nUnable to fetch channel name from id, defaulting to a randomly generated name instead.')
                 return random_string(12)
         except:
-            stderr.write('Unable to fetch channel name from id, defaulting to a randomly generated name instead.')
+            stderr.write('\nUnable to fetch channel name from id, defaulting to a randomly generated name instead.')
             return random_string(12) 
 
     def create_folders(self, server, channel):
@@ -167,9 +166,9 @@ class DiscordScraper:
                 with open(path.join(folder, filename), 'wb') as bin:
                     bin.write(binary_data)
             else:
-                stderr.write('Failed to grab contents of %s' % url)
+                stderr.write('\nFailed to grab contents of %s' % url)
         except:
-            stderr.write('Failed to grab contents of %s' % url)
+            stderr.write('\nFailed to grab contents of %s' % url)
 
     def grab_data(self):
         for dmname, dmchannel in self.directs.items():
