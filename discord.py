@@ -11,7 +11,7 @@ fix_utf_error = lambda string: normalize('NFKC', string).encode('iso-8859-1', 'i
 py3_url_split = lambda    url: [url.split('/')[2], '/%s' % '/'.join(url.split('/')[3::])]
 get_snowflake = lambda timems: (timems - 1420070400000) << 22
 get_timestamp = lambda sflake: ((sflake >> 22) + 1420070400000) / 1000.0
-get_mimetype  = lambda string: MimeTypes().guess_type(string)[0] if len(MimeTypes().guess_type(string)) > 0 else 'application/octet-stream'
+get_mimetype  = lambda string: MimeTypes().guess_type(string)[0] if MimeTypes().guess_type(string)[0] != None else 'application/octet-stream'
 get_tstruct   = lambda string: strptime(string, '%d %m %Y %H:%M:%S')
 
 def get_day(day, month, year):
@@ -206,15 +206,29 @@ class DiscordScraper:
                                             if get_mimetype(attachment['url']).split('/')[0] not in ['image', 'video']:
                                                 self.download(attachment['url'], folder)
 
+                                    for embed in message['embeds']:
+                                        if self.types['images'] == True:
+                                            if get_mimetype(embed['url']).split('/')[0] == 'image':
+                                                self.download(embed['url'], folder)
+
+                                        if self.types['videos'] == True:
+                                            if get_mimetype(embed['url']).split('/')[0] == 'video':
+                                                self.download(embed['url'], folder)
+
+                                        if self.types['files'] == True:
+                                            if get_mimetype(embed['url']).split('/')[0] not in ['image', 'video']:
+                                                self.download(embed['url'], folder)
+
                                     if self.types['text'] == True:
                                         with open(path.join(folder, 'messages.csv'), 'a') as log:
                                             log.write('\n%s,%s,%s,%s,%s,%s#%s' % (dmchannel, message['id'], message['content'].replace(',', ';').replace('\n', ' '), message['timestamp'], message['author']['id'], message['author']['username'].replace(',', ';'), message['author']['discriminator']))
                                                     
                         except ValueError:
-                            continue
+                            pass
 
-                        except Exception:
-                            continue
+                        except Exception as ex:
+                            stderr.write('\n%s' % ex)
+                            pass
                                 
         for server in self.servers.keys():
             for channels in self.servers.values():
@@ -234,7 +248,6 @@ class DiscordScraper:
                                 
                                 try:
                                     min_id, max_id = get_day(day, month, year)
-                                    
                                     request = Request(self.headers)
                                     contents = request.grab_page('https://discordapp.com/api/v6/guilds/%s/messages/search?channel_id=%s&min_id=%s&max_id=%s&%s' % (server, channel, min_id, max_id, self.query))
                                     for messages in contents['messages']:
@@ -253,15 +266,29 @@ class DiscordScraper:
                                                     if get_mimetype(attachment['url']).split('/')[0] not in ['image', 'video']:
                                                         self.download(attachment['url'], folder)
 
+                                            for embed in message['embeds']:
+                                                if self.types['images'] == True:
+                                                    if get_mimetype(embed['url']).split('/')[0] == 'image':
+                                                        self.download(embed['url'], folder)
+
+                                                if self.types['videos'] == True:
+                                                    if get_mimetype(embed['url']).split('/')[0] == 'video':
+                                                        self.download(embed['url'], folder)
+
+                                                if self.types['files'] == True:
+                                                    if get_mimetype(embed['url']).split('/')[0] not in ['image', 'video']:
+                                                        self.download(embed['url'], folder)
+
                                             if self.types['text'] == True:
                                                 with open(path.join(folder, 'messages.csv'), 'a') as log:
                                                     log.write('\n%s,%s,%s,%s,%s,%s,%s#%s' % (server, channel, message['id'], message['content'].replace(',', ';').replace('\n', ' '), message['timestamp'], message['author']['id'], message['author']['username'].replace(',', ';'), message['author']['discriminator']))
                                                     
                                 except ValueError:
-                                    continue
+                                    pass
 
-                                except Exception:
-                                    continue
+                                except Exception as ex:
+                                    stderr.write('\n%s' % ex)
+                                    pass
                                 
 if __name__ == '__main__':
     ds = DiscordScraper()
