@@ -208,16 +208,16 @@ class DiscordScraper:
 
                                     for embed in message['embeds']:
                                         if self.types['images'] == True:
-                                            if get_mimetype(embed['url']).split('/')[0] == 'image':
-                                                self.download(embed['url'], folder)
+                                            if get_mimetype(embed['thumbnail']['proxy_url']).split('/')[0] == 'image':
+                                                self.download(embed['thumbnail']['proxy_url'], folder)
 
                                         if self.types['videos'] == True:
-                                            if get_mimetype(embed['url']).split('/')[0] == 'video':
-                                                self.download(embed['url'], folder)
+                                            if get_mimetype(embed['video']['proxy_url']).split('/')[0] == 'video':
+                                                self.download(embed['video']['proxy_url'], folder)
 
                                         if self.types['files'] == True:
-                                            if get_mimetype(embed['url']).split('/')[0] not in ['image', 'video']:
-                                                self.download(embed['url'], folder)
+                                            if get_mimetype(embed['thumbnail']['url']).split('/')[0] not in ['image', 'video']:
+                                                self.download(embed['thumbnail']['url'], folder)
 
                                     if self.types['text'] == True:
                                         with open(path.join(folder, 'messages.csv'), 'a') as log:
@@ -227,7 +227,6 @@ class DiscordScraper:
                             pass
 
                         except Exception as ex:
-                            stderr.write('\n%s' % ex)
                             pass
                                 
         for server in self.servers.keys():
@@ -268,16 +267,16 @@ class DiscordScraper:
 
                                             for embed in message['embeds']:
                                                 if self.types['images'] == True:
-                                                    if get_mimetype(embed['url']).split('/')[0] == 'image':
-                                                        self.download(embed['url'], folder)
+                                                    if get_mimetype(embed['thumbnail']['proxy_url']).split('/')[0] == 'image':
+                                                        self.download(embed['thumbnail']['proxy_url'], folder)
 
                                                 if self.types['videos'] == True:
-                                                    if get_mimetype(embed['url']).split('/')[0] == 'video':
-                                                        self.download(embed['url'], folder)
+                                                    if get_mimetype(embed['video']['proxy_url']).split('/')[0] == 'video':
+                                                        self.download(embed['video']['proxy_url'], folder)
 
                                                 if self.types['files'] == True:
-                                                    if get_mimetype(embed['url']).split('/')[0] not in ['image', 'video']:
-                                                        self.download(embed['url'], folder)
+                                                    if get_mimetype(embed['thumbnail']['url']).split('/')[0] not in ['image', 'video']:
+                                                        self.download(embed['thumbnail']['url'], folder)
 
                                             if self.types['text'] == True:
                                                 with open(path.join(folder, 'messages.csv'), 'a') as log:
@@ -287,7 +286,6 @@ class DiscordScraper:
                                     pass
 
                                 except Exception as ex:
-                                    stderr.write('\n%s' % ex)
                                     pass
                                 
 if __name__ == '__main__':
