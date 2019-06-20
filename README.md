@@ -1,6 +1,6 @@
 # Discord Scraper
 
-Release Date: November 14, 2017 @ 05:00 UTC-0
+Release Date: November 14, 2018 @ 05:00 UTC-0
 
 Creation Date: October 3, 2017 @ 10:13 UTC-0
 
