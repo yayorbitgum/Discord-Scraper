@@ -182,7 +182,7 @@ class DiscordScraper:
             for year in range(tzdata.tm_year, 2015, -1):
                 for month in range(12, 1, -1):
                     for day in range(31, 1, -1):
-                        if month > tzdata.tm_mon: continue
+                        if month > tzdata.tm_mon and year == tzdata.tm_year: continue
                         if month == tzdata.tm_mon and day > tzdata.tm_mday: continue
                                 
                         try:
@@ -242,7 +242,7 @@ class DiscordScraper:
                     for year in range(tzdata.tm_year, 2015, -1):
                         for month in range(12, 1, -1):
                             for day in range(31, 1, -1):
-                                if month > tzdata.tm_mon: continue
+                                if month > tzdata.tm_mon and year == tzdata.tm_year: continue
                                 if month == tzdata.tm_mon and day > tzdata.tm_mday: continue
                                 
                                 try:
