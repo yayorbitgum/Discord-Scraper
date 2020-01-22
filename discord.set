@@ -1,0 +1,47 @@
+// The authorization token is needed to return data from the script's queries to Discord.
+// NEVER SHARE YOUR TOKEN WITH ANYONE, IF YOU NEED A COPY OF THIS SETFILE THEN SIMPLY GRAB THIS TEMPLATE FROM THE REPOSITORY.
+Token = 
+
+
+// The streamsize is a minimum file size for grabbing files.
+//  Any file that exceeds the streamsize will be downloaded in chunks.
+//  This should be easier on slower storage mediums to run this script.
+
+// DEFAULT: 2097152 bytes (2 MiB)
+Stream Size = 2097152
+
+
+// The user agent is the header that Discord will use to determine what kind of system you're running.
+//  You don't really need to change this unless you want to spoof another system entirely.
+
+// DEFAULT: Discord desktop application running on Windows 10 x64
+User Agent = Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) discord/0.0.305 Chrome/69.0.3497.128 Electron/4.0.8 Safari/537.36
+
+
+// The following arrays are used for servers and their channels.
+//  The naming scheme is SERVER_{id} which makes it easier for the script to handle multiple servers.
+// SERVER_012345678901234567 => [012345678901234567, 012345678901234567]
+
+
+// The following array is used for direct messages.
+//  The array values should be the direct message channel IDs.
+//  Directs => []
+
+
+// The following booleans are used to configure the scraper regarding the file types to gather.
+//  Make sure these values are all capitalized in order for this script to function.
+Grab Images = TRUE
+Grab Videos = TRUE
+Grab Text = TRUE
+
+// This setting will determine whether we can gather data from channels marked as NSFW or not.
+Grab NSFW Content = TRUE
+
+
+// The following setting will be used to determine how we will store scraped channel text.
+//  This is the list of valid methods:
+//      JSON
+//      SQLite
+
+// DEFAULT: JSON
+Text Store Method = JSON
