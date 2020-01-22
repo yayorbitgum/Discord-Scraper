@@ -69,7 +69,7 @@ class Discord(object):
             for k, v in cfg.items.items():
                 if k.startswith('SERVER_'):
                     self.servers.update({k.split('_')[1]: v})
-        except Exception:
+        except:
             print(format_exc())
             exit(1)
 
@@ -116,8 +116,17 @@ class Discord(object):
                 filename = f"{image['id']}_{image['url'].split('/')[-1].split('?')[0]}"
                 client = Client(image['url'], localhead)
                 
-                connection = client.GetConnection()
-                response = client.GetResponse(connection)
+                filepath = path.join(getcwd(), 'Scrapes', server, channel)
+                if not path.exists(filepath):
+                    makedirs(filepath)
+                    
+                filename = path.join(filepath, filename)
+                if not path.isfile(filename):
+                    client.Download(filename, self.config['Stream Size'])
+                
+            for video in files['videos']:
+                filename = f"{video['id']}_{video['url'].split('/')[-1].split('?')[0]}"
+                client = Client(video['url'], localhead)
                 
                 filepath = path.join(getcwd(), 'Scrapes', server, channel)
                 if not path.exists(filepath):
@@ -125,20 +134,9 @@ class Discord(object):
                     
                 filename = path.join(filepath, filename)
                 if not path.isfile(filename):
-                    client.Download(response, filename, self.config['Stream Size'])
+                    client.Download(filename, self.config['Stream Size'])
                 
-            for video in files['videos']:
-                filename = f"{video['id']}_{video['url'].split('/')[-1].split('?')[0]}"
-                client = Client(video['url'], localhead)
-                
-                connection = client.GetConnection()
-                response = client.GetResponse(connection)
-                
-                filename = path.join(getcwd(), self.config['Base Dir'], server, channel, filename)
-                if not path.isfile(filename):
-                    client.Download(response, filename, self.config['Stream Size'])
-                
-        except Exception:
+        except:
             print(format_exc())
             return False
         
@@ -177,24 +175,24 @@ class Discord(object):
                         
                         if self.config['Grab Images'] and GetMimetype(filename).split('/')[0] == 'image':
                             files['images'].append({'id': fid, 'url': url})
-                        
+                       
                     for embed in message['embeds']:
                         try:
                             if embed['image'] and self.config['Grab Images']:
                                 fid = embed['image']['id']
                                 url = embed['image']['proxy_url']
                                 files['images'].append({'id': fid, 'url': url})
-                        except KeyError:
+                        except ValueError:
                             pass
-                        
+
                         try:
                             if embed['video'] and self.config['Grab Videos']:
                                 fid = embed['video']['id']
                                 url = embed['video']['proxy_url']
                                 files['videos'].append({'id': fid, 'url': url})
-                        except KeyError:
+                        except ValueError:
                             pass
-                
+                        
             if self.config['Grab Text']:
                 if self.config['Text Store Method'] == 'JSON':
                     self.WriteJSON(SafeName(server), SafeName(channel), texts)
@@ -222,49 +220,47 @@ class Discord(object):
             with open(filename, 'a') as jsonfile:
                 jsonfile.write(f'{dumps(texts)},\n')
                 
-        except Exception:
+        except:
             print(format_exc())
             return None
         
     def GrabData(self):
         try:
             timezone = gmtime(time())
-            query = '&has=embed'
+            query = '&has=embed&has=file&has=link'
             
             query = f'{query}&has=image' if self.config['Grab Images'] else query
             query = f'{query}&has=video' if self.config['Grab Videos'] else query
             nsfw = '&include_nsfw=true' if self.config['Grab NSFW Content'] else '&include_nsfw=false'
             
-            for year in range(timezone.tm_year, 2015, -1):
-                for month in range(12, 1, -1):
-                    for day in range(31, 1, -1):
-                        
-                        if month > timezone.tm_mon and year == timezone.tm_year:
-                            continue
-                        
-                        if month == timezone.tm_mon and day > timezone.tm_mday:
-                            continue
-                        
-                        for server, channels in self.servers.items():
-                            servername = self.GetServerName(server)
-                            
-                            for channel in channels:
-                                today = GetDate(day, month, year)
-                                channelname = self.GetChannelName(channel)
-                                self.head.update({'referer': f'https://discordapp.com/channels/{server}/{channel}'})
+            for server, channels in self.servers.items():
+                server_name = self.GetServerName(server)
+                
+                for channel in channels:
+                    channel_name = self.GetChannelName(channel)
+            
+                    for year in range(timezone.tm_year, 2014, -1):
+                        for month in range(12, 0, -1):
+                            for day in range(31, 0, -1):
                                 
-                                client = Client(f'https://discordapp.com/api/v6/guilds/{server}/messages/search?min_id={today[0]}&max_id={today[1]}{query}&channel_id={channel}{nsfw}', self.head)
-                                connection = client.GetConnection()
-                                data = client.GetData(connection)
+                                try:
+                                    today = GetDate(day, month, year)
+                                    self.head.update({'referer': f'https://discordapp.com/channels/{server}/{channel}'})
+                                    client = Client(f'https://discordapp.com/api/v6/guilds/{server}/messages/search?min_id={today[0]}&max_id={today[1]}{query}&channel_id={channel}{nsfw}', self.head)
+                                    
+                                    connection = client.GetConnection()
+                                    data = client.GetData(connection)
+                                    print(f'Testing {month:02d}/{day:02d}/{year}')
+                                    
+                                    if data is None:
+                                        continue
+                                    
+                                    jsondata = loads(data.encode())
+                                    if jsondata['total_results'] > 0:
+                                        self.CheckFiles(server_name, channel_name, jsondata)
+                                        
+                                except ValueError:
+                                    continue
                                 
-                                if data is None:
-                                    raise Exception(f'Unable to grab data between {day:02d}-{month:02d}-{year} and {day+1:02d}-{month:02d}-{year}')
-                                
-                                jsondata = loads(data.encode())
-                                self.CheckFiles(servername, channelname, jsondata)
-        except ValueError:
-            pass
-        
-        except Exception:
-            print(format_exc())
-            pass
+        except:
+            ''
