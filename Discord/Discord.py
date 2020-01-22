@@ -243,6 +243,13 @@ class Discord(object):
                         for month in range(12, 0, -1):
                             for day in range(31, 0, -1):
                                 
+                                if year == timezone.tm_year:
+                                    if month > timezone.tm_mon:
+                                        continue
+                                    
+                                    if month == timezone.tm_mon and day > timezone.tm_mday:
+                                        continue
+                                
                                 try:
                                     today = GetDate(day, month, year)
                                     self.head.update({'referer': f'https://discordapp.com/channels/{server}/{channel}'})
