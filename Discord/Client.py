@@ -14,9 +14,9 @@ class Client(object):
         self.path = '/%s' % '/'.join(url.split('/')[3:])
         self.head = headers
         
-    def GetConnection(self, domain=None):
-        return HTTPSConnection(self.domain if domain is None else domain, self.port) if self.scheme == 'https' \
-            else HTTPConnection(self.domain if domain is None else domain, self.port)
+    def GetConnection(self):
+        return HTTPSConnection(self.domain, self.port) if self.scheme == 'https' \
+            else HTTPConnection(self.domain, self.port)
             
     def GetResponse(self, connection, uri=None):
         try:
@@ -31,18 +31,18 @@ class Client(object):
                 connection = self.GetConnection()
                 return self.GetResponse(connection, location)
                 
-            return None
-        except:
+            raise Exception
+        except Exception:
             return None
         
     def GetData(self, connection, uri=None):
         try:
             response = self.GetResponse(connection, uri)
             if response is None:
-                return None
+                raise Exception
             
             return response.read().decode('utf-8', 'ignore')
-        except:
+        except Exception:
             return None
         
     def DownloadFile(self, response, filename):
@@ -71,22 +71,27 @@ class Client(object):
                     
                     if resp is None:
                         file.close()
-                        return False
+                        raise Exception
                     
                     file.write(resp.read())
                     buffer += streamsize
                     
             return True
-        except:
+        except Exception:
+            print(format_exc())
             return False
         
     def Download(self, filename, streamsize):
         try:
-            connection = self.GetConnection('media.discordapp.net')
+            if path.isfile(filename):
+                print('Skipping duplicate file...')
+                return None
+            
+            connection = self.GetConnection()
             response = self.GetResponse(connection)
             
             if response is None:
-                return None
+                raise Exception
             
             filepath = path.split(filename)[:-1][0]
             if not path.exists(filepath):
@@ -96,5 +101,6 @@ class Client(object):
             self.StreamFile(response, filename, filesize, streamsize) if filesize >= streamsize \
                 else self.DownloadFile(response, filename)
                 
-        except:
+        except Exception:
+            print(format_exc())
             return None

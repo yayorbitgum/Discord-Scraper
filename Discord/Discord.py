@@ -69,6 +69,7 @@ class Discord(object):
             for k, v in cfg.items.items():
                 if k.startswith('SERVER_'):
                     self.servers.update({k.split('_')[1]: v})
+                   
         except:
             print(format_exc())
             exit(1)
@@ -80,15 +81,15 @@ class Discord(object):
             data = client.GetData(connection)
             
             if data is None:
-                raise Exception()
+                raise Exception
             
             jsondata = loads(data.encode())
             if len(jsondata) == 0:
-                raise Exception()
+                raise Exception
             
             return jsondata['name']
         except Exception:
-            print(f'Failed to grab server name for {id}, generating a random name instead...')
+            print(format_exc())
             return RandomString(16)
         
     def GetChannelName(self, id):
@@ -98,20 +99,23 @@ class Discord(object):
             data = client.GetData(connection)
             
             if data is None:
-                raise Exception()
+                raise Exception
             
             jsondata = loads(data.encode())
             if len(jsondata) == 0:
-                raise Exception()
+                raise Exception
             
             return jsondata['name']
         except Exception:
-            print(f'Failed to grab channel name for {id}, generating a random name instead...')
+            print(format_exc())
             return RandomString(16)
         
     def DownloadFiles(self, server, channel, files):
+        localhead = {'user-agent': self.config['User Agent']}
+        if len(files['images']) == 0 and len(files['videos']) == 0:
+            return None
+        
         try:
-            localhead = {'user-agent': self.config['User Agent']}
             for image in files['images']:
                 filename = f"{image['id']}_{image['url'].split('/')[-1].split('?')[0]}"
                 client = Client(image['url'], localhead)
@@ -123,7 +127,11 @@ class Discord(object):
                 filename = path.join(filepath, filename)
                 if not path.isfile(filename):
                     client.Download(filename, self.config['Stream Size'])
-                
+        except:
+            print(format_exc())
+            pass
+        
+        try:
             for video in files['videos']:
                 filename = f"{video['id']}_{video['url'].split('/')[-1].split('?')[0]}"
                 client = Client(video['url'], localhead)
@@ -138,12 +146,12 @@ class Discord(object):
                 
         except:
             print(format_exc())
-            return False
+            pass
         
     def CheckFiles(self, server, channel, jsondata):
         try:
             if jsondata is None:
-                raise Exception()
+                raise Exception
             
             texts = []
             files = {
@@ -169,12 +177,15 @@ class Discord(object):
                         })
                     
                     for attachment in message['attachments']:
-                        fid = attachment['id']
-                        filename = attachment['filename']
-                        url = attachment['proxy_url']
-                        
-                        if self.config['Grab Images'] and GetMimetype(filename).split('/')[0] == 'image':
-                            files['images'].append({'id': fid, 'url': url})
+                        try:
+                            fid = attachment['id']
+                            filename = attachment['filename']
+                            url = attachment['proxy_url']
+                            
+                            if self.config['Grab Images'] and GetMimetype(filename).split('/')[0] == 'image':
+                                files['images'].append({'id': fid, 'url': url})
+                        except KeyError:
+                            pass
                        
                     for embed in message['embeds']:
                         try:
@@ -182,7 +193,7 @@ class Discord(object):
                                 fid = embed['image']['id']
                                 url = embed['image']['proxy_url']
                                 files['images'].append({'id': fid, 'url': url})
-                        except ValueError:
+                        except KeyError:
                             pass
 
                         try:
@@ -190,7 +201,7 @@ class Discord(object):
                                 fid = embed['video']['id']
                                 url = embed['video']['proxy_url']
                                 files['videos'].append({'id': fid, 'url': url})
-                        except ValueError:
+                        except KeyError:
                             pass
                         
             if self.config['Grab Text']:
@@ -227,7 +238,7 @@ class Discord(object):
     def GrabData(self):
         try:
             timezone = gmtime(time())
-            query = '&has=embed&has=file&has=link'
+            query = ''
             
             query = f'{query}&has=image' if self.config['Grab Images'] else query
             query = f'{query}&has=video' if self.config['Grab Videos'] else query
@@ -253,21 +264,19 @@ class Discord(object):
                                 try:
                                     today = GetDate(day, month, year)
                                     self.head.update({'referer': f'https://discordapp.com/channels/{server}/{channel}'})
-                                    client = Client(f'https://discordapp.com/api/v6/guilds/{server}/messages/search?min_id={today[0]}&max_id={today[1]}{query}&channel_id={channel}{nsfw}', self.head)
+                                    client = Client(f'https://discordapp.com/api/v6/guilds/{server}/messages/search?min_id={today[0]}&max_id={today[1]}&channel_id={channel}{nsfw}', self.head)
                                     
                                     connection = client.GetConnection()
                                     data = client.GetData(connection)
-                                    print(f'Testing {month:02d}/{day:02d}/{year}')
                                     
                                     if data is None:
                                         continue
                                     
                                     jsondata = loads(data.encode())
-                                    if jsondata['total_results'] > 0:
-                                        self.CheckFiles(server_name, channel_name, jsondata)
+                                    self.CheckFiles(server_name, channel_name, jsondata)
                                         
                                 except ValueError:
                                     continue
                                 
         except:
-            ''
+            print(format_exc())
