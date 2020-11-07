@@ -9,6 +9,9 @@ from SimpleRequests.SimpleRequest import error
 # Use the datetime module for generating timestamps and snowflakes.
 from datetime import datetime, timedelta
 
+# Use the time module for generating timestamps that are backwards compatible with Python 2.
+from time import mktime
+
 # Use the os module for creating directories and writing files.
 from os import makedirs, getcwd, path
 
@@ -56,11 +59,8 @@ def get_day(day, month, year):
     :param year: The target year.
     """
 
-    min_time = datetime(year, month, day, 
-        hour=0, minute=0, second=0).timestamp()
-
-    max_time = datetime(year, month, day, 
-        hour=23, minute=59, second=59).timestamp()
+    min_time = mktime((year, month, day, 0, 0, 0, -1, -1, -1))
+    max_time = mktime((year, month, day, 23, 59, 59, -1, -1, -1))
 
     return {
         '00:00': snowflake(int(min_time)),
