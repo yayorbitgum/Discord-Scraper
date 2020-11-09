@@ -1,14 +1,8 @@
-# START OF FILE
-# START OF HEADER
-
 """
 @author:  Dracovian
 @date:    2020-11-07
 @license: WTFPL
 """
-
-# END OF HEADER
-# START OF IMPORTS
 
 """
 datetime.timedelta: Used to subtract an entire day from the current one.
@@ -20,9 +14,6 @@ from datetime import timedelta, datetime
 module.DiscordScraper: Used to access the Discord Scraper class functions.
 """
 from module import DiscordScraper
-
-# END OF IMPORTS
-# START OF FUNCTIONS
 
 def startDM(scraper, alias, channel, day=None):
     """
@@ -46,8 +37,7 @@ def startGuild(scraper, guild, channel, day=None):
 
     # Determine if the day is empty, default to the current day if so.
     if day is None:
-        # day = datetime.today() # TODO: Uncomment this for release
-        day = datetime(2020, 10, 8, 0, 0, 0, 0, None)
+        day = datetime.today()
 
     # Determine if the year is no less than 2015 since any time before this point will be guaranteed invalid.
     if day.year > 2014:
@@ -94,9 +84,6 @@ def startGuild(scraper, guild, channel, day=None):
         # Recursively call this function with the new day.
         startGuild(scraper, guild, channel, day)
 
-# END OF FUNCTIONS
-# START OF ENTRYPOINT
-
 if __name__ == '__main__':
     """
     This is the entrypoint for our script since __name__ is going to be set to __main__ by default.
@@ -119,6 +106,3 @@ if __name__ == '__main__':
 
         # Start the scraper for the current direct message.
         startDM(discordscraper, alias, channel)
-
-# END OF ENTRYPOINT
-# END OF FILE

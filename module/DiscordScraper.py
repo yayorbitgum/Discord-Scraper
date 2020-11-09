@@ -1,14 +1,8 @@
-# START OF FILE
-# START OF HEADER
-
 """
 @author:  Dracovian
 @date:    2020-11-09
 @license: WTFPL
 """
-
-# END OF HEADER
-# START OF IMPORTS
 
 """
 sys.exit:         Used to halt the script, optionally with a code.
@@ -63,10 +57,6 @@ else:  # This means that we're running some version of Python before 2.X or afte
     stderr.write('[ERROR]: Invalid version of Python detected! This script only supports Python 2 and Python 3.\n')
     exit()
 
-
-# END OF IMPORTS
-# START OF FUNCTIONS
-
 def error(message):
     """
     Throw an error message and then halt the script.
@@ -87,10 +77,6 @@ def warn(message):
 
     # Append our message with a newline character.
     stderr.write('[WARN] {0}\n'.format(message))
-
-
-# END OF FUNCTIONS
-# START OF CLASSES
 
 class DiscordConfig(object):
     """
@@ -189,11 +175,25 @@ class DiscordScraper(object):
             nsfw   = config.query['nsfw'  ]
         )
     
-    def grabGuildName(self, id):
+    def grabGuildName(self, id, dm=None):
         """
         Send a request to retrieve the guild name by its ID.
         :param id: The ID for the guild we want to retrieve the name for.
+        :param dm: A true or false (boolean) value that determines if we're scraping a direct message.
         """
+
+        # If the dm is empty, then set it to false.
+        if dm is None:
+            dm = False
+
+        # Determine if we're in a dm.
+        if dm:
+
+            # Just pass the safe name on through.
+            self.guildname = DiscordScraper.getSafeName(id)
+
+            # Exit the function.
+            return None
 
         # Create a variable that references the DiscordRequest object.
         request = DiscordRequest()
@@ -232,11 +232,25 @@ class DiscordScraper(object):
             self.guildname = '{0}_{1}'.format(id, guildname)
 
     
-    def grabChannelName(self, id):
+    def grabChannelName(self, id, dm=None):
         """
         Send a request to retrieve the channel name by its ID.
         :param id: The ID for the channel that we want to retrieve the name for.
+        :param dm: A true or false (boolean) value that determines if we're scraping a direct message.
         """
+
+        # If the dm is empty, then set it to false.
+        if dm is None:
+            dm = False
+
+        # Determine if we're in a dm.
+        if dm:
+
+            # Just set the ID.
+            self.channelname = id
+
+            # Exit this function
+            return None
 
         # Create a variable that references the DiscordRequest object.
         request = DiscordRequest()
@@ -578,6 +592,3 @@ class DiscordScraper(object):
 
         # Return the response.
         return request.sendRequest(url)
-        
-# END OF CLASSES
-# END OF FILE

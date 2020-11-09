@@ -1,14 +1,8 @@
-# START OF FILE
-# START OF HEADER
-
 """
 @author:  Dracovian
 @date:    2020-11-09
 @license: WTFPL
 """
-
-# END OF HEADER
-# START OF IMPORTS
 
 """
 http.client.HTTPSConnection: Used to grab data from sites that use TLS or SSL encryption.
@@ -26,10 +20,6 @@ sys.stderr: Used to write to the standard error filestream.
 """
 from sys import stderr
 
-
-# END OF IMPORTS
-# START OF FUNCTIONS
-
 def warn(message):
     """
     Throw a warning message without halting the script.
@@ -38,9 +28,6 @@ def warn(message):
 
     # Append our message with a newline character.
     stderr.write('[WARN] {0}\n'.format(message))
-
-# END OF FUNCTIONS
-# START OF CLASSES
 
 class DiscordRequest(object):
     """
@@ -248,7 +235,4 @@ class DiscordRequest(object):
             filestream.close()
 
             # Reset the downloaded variable.
-            downloaded = 0
-
-# END OF CLASSES
-# END OF FILE
+            del self.headers['Range']

@@ -5,6 +5,7 @@
     - [Desktop Application:](#desktop-application)
     - [Website:](#website)
   - [Notes](#notes)
+  - [Missing Features](#missing-features)
   - [Changelog](#changelog)
   
 ## Configuring
@@ -42,7 +43,7 @@ Gather the guild ID that you want to scrape from by right-clicking on the icon f
 
 If you're wanting to grab from a direct message instead, then this method won't return the correct ID that is needed by the script.
 
-The only real way to get this with ease through the Discord app is to open the direct message you want to scrape from and then open the developer tools to see the correct ID to paste into the JSON file in the title bar of the developer tools window.
+The only real way to get this with ease through the Discord app is to open the direct message you want to scrape from and then open the developer tools to see the correct ID in the title bar of the developer tools window and paste it into the JSON file.
 
 **Step 6:**
 Gather the channel ID that you want to scrape from by right-clicking on the channel name to the right of the guild icons and selecting *"Copy ID"*.
@@ -56,11 +57,20 @@ Run the script to start the downloading process.
 * You can copy in multiple channels on multiple guilds if you want to.
 * You must make modifications to the JSON file before running the script *(otherwise you'll end up with errors)*.
 
+## Missing Features
+
+- DM grabbing
+- Config options handling
+- Non-image and non-video embedded content grabbing
+- Text grabbing
+- Response data caching
+- Ratelimiter mitigation
+
 ## Changelog
 
 **The dates below are in YYYY-MM-DD formatting (ISO 8601).**
 
-2020-11-07 - Major Repository Overhaul:
+2020-11-09 - Major Repository Overhaul:
 * Removed the experimental branches and renamed the master branch.
 * Overhauled the SimpleRequests module and ensured Python 2 and 3 compatibility.
 * Updated the API target since the current API version is 8 despite what Discord says on their official API reference.

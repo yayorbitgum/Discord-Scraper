@@ -1,14 +1,8 @@
-# START OF FILE
-# START OF HEADER
-
 """
 @author:  Dracovian
 @date:    2020-11-09
 @license: WTFPL
 """
-
-# END OF HEADER
-# START OF IMPORTS
 
 """
 urllib2.HTTPError: Used to catch any errors pertaining to urllib2.
@@ -28,9 +22,6 @@ sys.stderr: Used to write to the standard error filestream.
 """
 from sys import stderr
 
-# END OF IMPORTS
-# START OF FUNCTIONS
-
 def warn(message):
     """
     Throw a warning message without halting the script.
@@ -39,9 +30,6 @@ def warn(message):
 
     # Append our message with a newline character.
     stderr.write('[WARN] {0}\n'.format(message))
-
-# END OF FUNCTIONS
-# START OF CLASSES
 
 class DiscordRequest(object):
     """
@@ -105,6 +93,9 @@ class DiscordRequest(object):
 
         except HTTPError as e:
 
+            # TODO: Remove this when releasing
+            print(self.headers)
+
             # Otherwise throw a warning message to acknowledge a failed connection.
             warn('HTTP: {0} from {1}.'.format(e.code, url))
 
@@ -138,7 +129,7 @@ class DiscordRequest(object):
             return None
         
         # Get the file size in bytes.
-        filesize = int(response.items().getheader('Content-Length'))
+        filesize = int(response.info().getheader('Content-Length'))
         
         # Create a variable to store the amount of bytes that we've already downloaded thus far.
         downloaded = 0
@@ -153,10 +144,10 @@ class DiscordRequest(object):
         with open(filename, 'a+b') as filestream:
 
             # Determine if we can grab the file byte-by-byte or if our buffer is 0 or larger than our file size.
-            if response.getheader('Accept-Ranges') != 'bytes' or buffer <= 0 or numchunks < 1:
+            if response.info().getheader('Accept-Ranges') != 'bytes' or buffer <= 0 or numchunks < 1:
 
                 # Print something out for the user to read.
-                print('\rDownloading...', '')
+                print('Downloading...\r')
 
                 # Just simply write the full contents of the file instead of streaming it in chunks.
                 filestream.write(response.read())
@@ -183,7 +174,7 @@ class DiscordRequest(object):
                 headers.update({'Range': 'bytes={0}-{1}'.format(downloaded, chunk)})
 
                 # Set the percentage to the current downloaded percent.
-                percentage = 100 * downloaded / filesize
+                percentage = 100 * downloaded / float(filesize)
                 
                 # Set the headers for the new Request object.
                 request.setHeaders(headers)
@@ -201,7 +192,7 @@ class DiscordRequest(object):
                     return None
 
                 # Print something out to the user.
-                print('\rDownloading {0:3.2f}%...'.format(percentage), '')
+                print('Downloading {0:3.2f}%...\r'.format(percentage))
                 
                 # Write the contents of the chunk to the file.
                 filestream.write(response.read())
@@ -239,7 +230,7 @@ class DiscordRequest(object):
                     return None
 
                 # Print something out to the user.
-                print('\rDownloading {0:3.2f}%...'.format(percentage), '')
+                print('Downloading {0:3.2f}%...\r'.format(percentage))
                 
                 # Write the contents of the chunk to the file.
                 filestream.write(response.read())
@@ -247,8 +238,5 @@ class DiscordRequest(object):
             # Close the file stream.
             filestream.close()
 
-            # Reset the downloaded variable.
-            downloaded = 0
-
-# END OF CLASSES
-# END OF FILE
+            # Clear the headers of the range header
+            del self.headers['Range']
