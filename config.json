@@ -1,5 +1,5 @@
 {
-    "tokenfile": "dracovian.token",
+    "tokenfile": "{enter token filename (with extension) here}",
     "useragent": "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) discord/0.0.308 Chrome/78.0.3904.130 Electron/7.3.2 Safari/537.36",
     "buffer": 1048576,
 
@@ -29,10 +29,5 @@
     },
 
     "directs": {},
-    "guilds": {
-        "311445205867954177": [
-            "395593535224676352",
-            "395595056293085186"
-        ]
-    }
+    "guilds": {}
 }
