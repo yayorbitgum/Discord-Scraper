@@ -1,348 +1,124 @@
-#
-# Imported module functions
-#
+# START OF FILE
+# START OF HEADER
 
-# Use our SimpleRequests module for this experimental version.
-from SimpleRequests import SimpleRequest
-from SimpleRequests.SimpleRequest import error
+"""
+@author:  Dracovian
+@date:    2020-11-07
+@license: WTFPL
+"""
 
-# Use the datetime module for generating timestamps and snowflakes.
-from datetime import datetime, timedelta
+# END OF HEADER
+# START OF IMPORTS
 
-# Use the time module for generating timestamps that are backwards compatible with Python 2.
-from time import mktime
+"""
+datetime.timedelta: Used to subtract an entire day from the current one.
+datetime.datetime:  Used to retrieve the current day.
+"""
+from datetime import timedelta, datetime
 
-# Use the os module for creating directories and writing files.
-from os import makedirs, getcwd, path
+"""
+module.DiscordScraper: Used to access the Discord Scraper class functions.
+"""
+from module import DiscordScraper
 
-# Use the mimetypes module to determine the mimetype of a file.
-from mimetypes import MimeTypes
+# END OF IMPORTS
+# START OF FUNCTIONS
 
-# Use the sqlite3 module to access SQLite databases.
-from sqlite3 import connect
-
-# Use the random module to choose from a list at random.
-from random import choice
-
-# Convert JSON to a Python dictionary for ease of traversal.
-from json import loads
-
-#
-# Lambda functions
-#
-
-# Return a random string of a specified length.
-random_str = lambda length: ''.join([choice('0123456789ABCDEF') for i in range(length)])
-
-# Get the mimetype string from an input filename.
-mimetype = lambda name: MimeTypes().guess_type(name)[0] \
-    if MimeTypes().guess_type(name)[0] is not None \
-    else 'application/octet-stream'
-
-# Return a Discord snowflake from a timestamp.
-snowflake = lambda timestamp_s: (timestamp_s * 1000 - 1420070400000) << 22
-
-# Return a timestamp from a Discord snowflake.
-timestamp = lambda snowflake_t: ((snowflake_t >> 22) + 1420070400000) / 1000.0
-
-
-#
-# Global functions
-#
-
-
-def get_day(day, month, year):
-    """Get the timestamps from 00:00 to 23:59 of the given day.
-
-    :param day: The target day.
-    :param month: The target month.
-    :param year: The target year.
+def startDM(scraper, alias, channel, day=None):
+    """
+    The initialization function for the scraper script to grab direct message contents.
+    :param scraper: The DiscordScraper class reference that we will be using.
+    :param alias: The named alias for the direct message.
+    :param channel: The ID for the direct message we're wanting to scrape from.
+    :param day: The datetime object for the day that we're wanting to scrape.
     """
 
-    min_time = mktime((year, month, day, 0, 0, 0, -1, -1, -1))
-    max_time = mktime((year, month, day, 23, 59, 59, -1, -1, -1))
+    pass
 
-    return {
-        '00:00': snowflake(int(min_time)),
-        '23:59': snowflake(int(max_time))
-    }
-
-
-def safe_name(name):
-    """Convert name to a *nix/Windows compliant name.
-
-    :param name: The filename to convert.
+def startGuild(scraper, guild, channel, day=None):
+    """
+    The initialization function for the scraper script.
+    :param scraper: The DiscordScraper class reference that we will be using.
+    :param guild: The ID for the guild that we're wanting to scrape from.
+    :param channel: The ID for the channel that we're wanting to scrape from.
+    :param day: The datetime object for the day that we're wanting to scrape.
     """
 
-    output = ""
-    for char in name:
-        if char not in '\\/<>:"|?*':
-            output += char
+    # Determine if the day is empty, default to the current day if so.
+    if day is None:
+        # day = datetime.today() # TODO: Uncomment this for release
+        day = datetime(2020, 10, 8, 0, 0, 0, 0, None)
 
-    return output
+    # Determine if the year is no less than 2015 since any time before this point will be guaranteed invalid.
+    if day.year > 2014:
 
+        # Get the snowflakes for the current day.
+        snowflakes = DiscordScraper.getDayBounds(day.day, day.month, day.year)
 
-def create_query_body(**kwargs):
-    """Generate a search query string for Discord."""
+        # Generate a valid URL to the undocumented API function for the search feature.
+        search = 'https://discordapp.com/api/{0}/channels/{1}/messages/search?min_id={2}&max_id={3}&{4}'.format(scraper.apiversion, channel, snowflakes[0], snowflakes[1], scraper.query)
 
-    query = ""
+        # Update the HTTP request headers to set the referer to the current guild channel URL.
+        scraper.headers.update({'Referer': 'https://discordapp.com/channels/{0}/{1}'.format(guild, channel)})
 
-    for key, value in kwargs.items():
-        if value is True and key != 'nsfw':
-            query += '&has=%s' % key[:-1]
+        # Generate the guild name.
+        scraper.grabGuildName(guild)
 
-        if key == 'nsfw':
-            query += '&include_nsfw=%s' % str(value).lower()
+        # Generate the channel name.
+        scraper.grabChannelName(channel)
 
-    return query
+        # Generate the scrape folders.
+        scraper.createFolders()
 
+        # Grab the API response for the search query URL.
+        response = DiscordScraper.requestData(search, scraper.headers)
 
-#
-# Classes
-#
+        # If we returned nothing then continue on to the previous day.
+        if response is None:
 
+            # Set the day to yesterday.
+            day += timedelta(days=-1)
 
-class DiscordConfig(object):
-    """Just a class used to store configs as objects."""
+            # Recursively call this function with the new day.
+            startGuild(scraper, guild, channel, day)
+        
+        # Read the response data.
+        data = response.read()
 
+        # Check the mimetypes of the embedded and attached files.
+        scraper.checkMimetypes(data)
 
-class Discord:
-    """Experimental Discord scraper class."""
+        # Set the day to yesterday.
+        day += timedelta(days=-1)
 
-    def __init__(self, config='config.json', apiver='v6'):
-        """Discord constructor.
+        # Recursively call this function with the new day.
+        startGuild(scraper, guild, channel, day)
 
-        :param config: The configuration JSON file.
-        :param apiver: The current Discord API version.
-        """
-
-        with open(config, 'r') as configfile:
-            configdata = loads(configfile.read())
-
-        cfg = type('DiscordConfig', (object,), configdata)()
-        if cfg.token == "" or cfg.token is None:
-            error('You must have an authorization token set in %s' % config)
-            exit(-1)
-
-        self.api = apiver
-        self.buffer = cfg.buffer
-
-        self.headers = {
-            'user-agent': cfg.agent,
-            'authorization': cfg.token
-        }
-
-        self.types = cfg.types
-        self.query = create_query_body(
-            images=cfg.query['images'],
-            files=cfg.query['files'],
-            embeds=cfg.query['embeds'],
-            links=cfg.query['links'],
-            videos=cfg.query['videos'],
-            nsfw=cfg.query['nsfw']
-        )
-
-        self.directs = cfg.directs if len(cfg.directs) > 0 else {}
-        self.servers = cfg.servers if len(cfg.servers) > 0 else {}
-
-        # Save us the time by exiting out when there's nothing to scrape.
-        if len(cfg.directs) == 0 and len(cfg.servers) == 0:
-            error('No servers or DMs were set to be grabbed, exiting.')
-            exit(0)
-
-    def get_server_name(self, serverid, isdm=False):
-        """Get the server name by its ID.
-
-        :param serverid: The server ID.
-        :param isdm: A flag to check whether we're in a DM or not.
-        """
-
-        if isdm:
-            return serverid
-
-        request = SimpleRequest(self.headers).request
-        server = request.grab_page('https://discordapp.com/api/%s/guilds/%s' % (self.api, serverid))
-
-        if server is not None and len(server) > 0:
-            return '%s_%s' % (serverid, safe_name(server['name']))
-
-        else:
-            error('Unable to fetch server name from id, generating one instead.')
-            return '%s_%s' % (serverid, random_str(12))
-
-    def get_channel_name(self, channelid, isdm=False):
-        """Get the channel name by its ID.
-
-        :param channelid: The channel ID.
-        :param isdm: A flag to check whether we're in a DM or not.
-        """
-
-        if isdm:
-            return channelid
-
-        request = SimpleRequest(self.headers).request
-        channel = request.grab_page('https://discordapp.com/api/%s/channels/%s' % (self.api, channelid))
-
-        if channel is not None and len(channel) > 0:
-            return '%s_%s' % (channelid, safe_name(channel['name']))
-
-        else:
-            error('Unable to fetch channel name from id, generating one instead.')
-            return '%s_%s' % (channelid, random_str(12))
-
-    @staticmethod
-    def create_folders(server, channel):
-        """Create the folder structure.
-
-        :param server: The server name.
-        :param channel: The channel name.
-        """
-
-        folder = path.join(getcwd(), 'Discord Scrapes', server, channel)
-        if not path.exists(folder):
-            makedirs(folder)
-
-        return folder
-
-    def download(self, url, folder):
-        """Download the contents of a URL.
-
-        :param url: The target URL.
-        :param folder: The target folder.
-        """
-
-        request = SimpleRequest(self.headers).request
-        request.set_header('user-agent', 'Mozilla/5.0 (X11; Linux x86_64) Chrome/78.0.3904.87 Safari/537.36')
-
-        filename = safe_name('%s_%s' % (url.split('/')[-2], url.split('/')[-1]))
-        if not path.exists(filename):
-            request.stream_file(url, folder, filename, self.buffer)
-
-    def check_config_mimetypes(self, source, folder):
-        """Check the config settings against the source mimetype.
-
-        :param source: Response from Discord search.
-        :param folder: Folder where the data will be stored.
-        """
-
-        for attachment in source['attachments']:
-            if self.types['images'] is True:
-                if mimetype(attachment['proxy_url']).split('/')[0] == 'image':
-                    self.download(attachment['proxy_url'], folder)
-
-            if self.types['videos'] is True:
-                if mimetype(attachment['proxy_url']).split('/')[0] == 'video':
-                    self.download(attachment['proxy_url'], folder)
-
-            if self.types['files'] is True:
-                if mimetype(attachment['proxy_url']).split('/')[0] not in ['image', 'video']:
-                    self.download(attachment['proxy_url'], folder)
-
-    @staticmethod
-    def insert_text(server, channel, message):
-        """Insert the text data into our SQLite database file.
-
-        :param server: The server name.
-        :param channel: The channel name.
-        :param message: Our message object.
-        """
-
-        dbdir = path.join(getcwd(), 'Discord Scrapes')
-        if not path.exists(dbdir):
-            makedirs(dbdir)
-
-        dbfile = path.join(dbdir, 'text.db')
-        db = connect(dbfile)
-        c = db.cursor()
-
-        c.execute('''CREATE TABLE IF NOT EXISTS text_%s_%s (
-            id TEXT,
-            name TEXT,
-            content TEXT,
-            timestamp TEXT
-        )''' % (server, channel))
-
-        c.execute('INSERT INTO text_%s_%s VALUES (?,?,?,?)' % (server, channel), (
-            message['author']['id'],
-            '%s#%s' % (message['author']['username'], message['author']['discriminator']),
-            message['content'],
-            message['timestamp']
-        ))
-
-        db.commit()
-        db.close()
-
-    def grab_data(self, folder, server, channel, isdm=False):
-        """Scan and grab the attachments.
-
-        :param folder: The folder name.
-        :param server: The server name.
-        :param channel: The channel name.
-        :param isdm: A flag to check whether we're in a DM or not.
-        """
-
-        date = datetime.today()
-
-        while date.year >= 2015:
-            request = SimpleRequest(self.headers).request
-            today = get_day(date.day, date.month, date.year)
-
-            if not isdm:
-                request.set_header('referer', 'https://discordapp.com/channels/%s/%s' % (server, channel))
-                content = request.grab_page(
-                    'https://discordapp.com/api/%s/guilds/%s/messages/search?channel_id=%s&min_id=%s&max_id=%s&%s' %
-                    (self.api, server, channel, today['00:00'], today['23:59'], self.query)
-                )
-            else:
-                request.set_header('referer', 'https://discordapp.com/channels/@me/%s' % channel)
-                content = request.grab_page(
-                    'https://discordapp.com/api/%s/channels/%s/messages/search?min_id=%s&max_id=%s&%s' %
-                    (self.api, channel, today['00:00'], today['23:59'], self.query)
-                )
-
-            try:
-                if content['messages'] is not None:
-                    for messages in content['messages']:
-                        for message in messages:
-                            self.check_config_mimetypes(message, folder)
-
-                            if self.types['text'] is True:
-                                if len(message['content']) > 0:
-                                    self.insert_text(server, channel, message)
-            except TypeError:
-                continue
-            
-            date += timedelta(days=-1)
-
-    def grab_server_data(self):
-        """Scan and grab the attachments within a server."""
-
-        for server, channels in self.servers.items():
-            for channel in channels:
-                folder = self.create_folders(
-                    self.get_server_name(server),
-                    self.get_channel_name(channel)
-                )
-
-                self.grab_data(folder, server, channel)
-
-    def grab_dm_data(self):
-        """Scan and grab the attachments within a direct message."""
-
-        for alias, channel in self.directs.items():
-            folder = self.create_folders(
-                path.join('Direct Messages', alias),
-                channel
-            )
-
-            self.grab_data(folder, alias, channel, True)
-
-#
-# Initializer
-#
-
+# END OF FUNCTIONS
+# START OF ENTRYPOINT
 
 if __name__ == '__main__':
-    ds = Discord()
-    ds.grab_server_data()
-    ds.grab_dm_data()
+    """
+    This is the entrypoint for our script since __name__ is going to be set to __main__ by default.
+    """
+
+    # Create a variable that references the Discord Scraper class.
+    discordscraper = DiscordScraper()
+
+    # Iterate through the guilds to scrape.
+    for guild, channels in discordscraper.guilds.items():
+
+        # Iterate through the channels to scrape in the guild.
+        for channel in channels:
+
+            # Start the scraper for the current channel.
+            startGuild(discordscraper, guild, channel)
+    
+    # Iterate through the direct messages to scrape.
+    for alias, channel in discordscraper.directs.items():
+
+        # Start the scraper for the current direct message.
+        startDM(discordscraper, alias, channel)
+
+# END OF ENTRYPOINT
+# END OF FILE
