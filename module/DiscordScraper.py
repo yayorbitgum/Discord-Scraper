@@ -558,19 +558,19 @@ class DiscordScraper(object):
         for key, value in kwargs.items():
 
             # Determine if the value is true and if it doesn't contain the value of "NSFW".
-            if value and key != 'NSFW':
+            if value and key != 'nsfw':
 
                 # Append the partial query string to the parameters array.
-                parameters.append('has={0}'.format(key))
+                parameters.append('has={0}'.format(key[:-1]))
             
             # Determine if the value contains the text "NSFW".
-            if key == 'NSFW':
+            if value and key == 'nsfw':
 
                 # Append the partial query string to the parameters array.
                 parameters.append('include_nsfw={0}'.format(str(value).lower()))
             
-            # Join the array of partial URI parameters and return that value.
-            '&'.join(parameters)
+        # Join the array of partial URI parameters and return that value.
+        return '&'.join(parameters)
 
     @staticmethod
     def requestData(url, headers=None):
