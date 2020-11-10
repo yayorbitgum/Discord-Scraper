@@ -384,28 +384,22 @@ class DiscordScraper(object):
                     for embed in message['embeds']:
 
                         # Determine if there are any embedded images.
-                        if self.types['images'] and embed['type'] == 'image':
+                        if self.types['images'] and embed['type'] in ['image', 'gifv']:
 
-                            # Get the proxied URL for our content.
-                            proxied = embed['image']['proxy_url']
+                            # Get the URL for our content.
+                            url = embed['url']
                             
                             # Begin downloading this file if so.
-                            self.startDownloading(proxied, self.location)
-                        
+                            self.startDownloading(url, self.location)
+
                         # Determine if there are any embedded videos.
                         if self.types['videos'] and embed['type'] == 'video':
-                            
-                            # Get the proxied URL for our content.
-                            proxied = embed['video']['proxy_url']
-                            
+
+                            # Get the URL for our content.
+                            url = embed['url']
+
                             # Begin downloading this file if so.
-                            self.startDownloading(proxied, self.location)
-                        
-                        # Determine if there are any embedded files that are not images nor videos.
-                        if self.types['files'] and embed['type'] not in ['image', 'video']:
-                            
-                            # TODO: Replace this with something that downloads the data...
-                            print(embed)
+                            self.startDownloading(url, self.location)
     
     @staticmethod
     def randomString(length):

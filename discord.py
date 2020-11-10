@@ -51,32 +51,35 @@ def startGuild(scraper, guild, channel, day=None):
         # Update the HTTP request headers to set the referer to the current guild channel URL.
         scraper.headers.update({'Referer': 'https://discordapp.com/channels/{0}/{1}'.format(guild, channel)})
 
-        # Generate the guild name.
-        scraper.grabGuildName(guild)
+        try:
+            # Generate the guild name.
+            scraper.grabGuildName(guild)
 
-        # Generate the channel name.
-        scraper.grabChannelName(channel)
+            # Generate the channel name.
+            scraper.grabChannelName(channel)
 
-        # Generate the scrape folders.
-        scraper.createFolders()
+            # Generate the scrape folders.
+            scraper.createFolders()
 
-        # Grab the API response for the search query URL.
-        response = DiscordScraper.requestData(search, scraper.headers)
+            # Grab the API response for the search query URL.
+            response = DiscordScraper.requestData(search, scraper.headers)
 
-        # If we returned nothing then continue on to the previous day.
-        if response is None:
+            # If we returned nothing then continue on to the previous day.
+            if response is None:
 
-            # Set the day to yesterday.
-            day += timedelta(days=-1)
+                # Set the day to yesterday.
+                day += timedelta(days=-1)
 
-            # Recursively call this function with the new day.
-            startGuild(scraper, guild, channel, day)
-        
-        # Read the response data.
-        data = response.read()
+                # Recursively call this function with the new day.
+                startGuild(scraper, guild, channel, day)
+            
+            # Read the response data.
+            data = response.read()
 
-        # Check the mimetypes of the embedded and attached files.
-        scraper.checkMimetypes(data)
+            # Check the mimetypes of the embedded and attached files.
+            scraper.checkMimetypes(data)
+        except:
+            pass
 
         # Set the day to yesterday.
         day += timedelta(days=-1)

@@ -20,6 +20,11 @@ sys.stderr: Used to write to the standard error filestream.
 """
 from sys import stderr
 
+"""
+time.sleep: Used to pause the script for a set time.
+"""
+from time import sleep
+
 def warn(message):
     """
     Throw a warning message without halting the script.
@@ -56,6 +61,9 @@ class DiscordRequest(object):
         Send a request to the target URL and return the response data.
         :param url: The URL to the target that we're wanting to grab data from.
         """
+       
+        # Sleep for about half a second to avoid ratelimit.
+        sleep(0.5)
 
         # Split the URL into parts.
         urlparts = url.split('/')
@@ -71,6 +79,11 @@ class DiscordRequest(object):
 
         # Retrieve the response from the request.
         response = connection.getresponse()
+
+        # TODO: Remove this before releasing
+        for header in response.getheaders():
+            if header[0] == 'Retry-After':
+                print(header)
 
         # Return the response if the connection was successful.
         if 199 < response.status < 300:
