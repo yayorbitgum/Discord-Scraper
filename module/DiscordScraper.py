@@ -1,15 +1,14 @@
 """
 @author:  Dracovian
-@date:    2020-11-09
+@date:    2021-02-10
 @license: WTFPL
 """
 
 """
-sys.exit:         Used to halt the script, optionally with a code.
 sys.stderr:       Used to access the standard error filestream from the OS.
 sys.version_info: Used to determine which version of Python is being used to run the script.
 """
-from sys import exit, stderr, version_info
+from sys import stderr, version_info
 
 """
 datetime.datetime:  Used to access the datetime class and its functions for easier date processing.
@@ -26,8 +25,22 @@ from mimetypes import MimeTypes
 os.makedirs: Used to create a folder with subfolders.
 os.getcwd:   Used to get the current working directory for the commandline, hopefully this is the same directory as the discord.py file.
 os.path:     Used to combine and split file paths since Windows uses a different path separator character to *nix systems such as Linux and macOS.
+os._exit:    Used to halt the script without calling cleanup handlers, flushing stdio buffers, or any cleanup routines (we really want this script to stop at this point)
 """
 from os import makedirs, getcwd, path
+from os import _exit as exit
+
+"""
+signal.SIGINT: Used to detect CTRL+C (Command+C) inputs during runtime.
+signal.signal: Used to tie in the SIGINT with an event function that can allow us to clear up any cached JSON data upon exiting.
+"""
+from signal import SIGINT, signal
+
+"""
+json.loads: Used to convert a serialized string into a dictionary object.
+json.dumps: Used to convert a dictionary object into a serialized string.
+"""
+from json import loads, dump
 
 """
 random.choice: Used to simplify the process of "randomly" choosing a value from an array.
@@ -40,11 +53,6 @@ time.mktime: Used to get the current timestamp of the system, this is here to up
 from time import mktime
 
 """
-json.loads: Used to convert a serialized string into a dictionary object.
-"""
-from json import loads
-
-"""
 This conditional statement will be used to import the class from the correct file based on the version of the Python interpreter used.
 """
 if version_info.major == 3:  # This means that we're running Python 3.X
@@ -55,7 +63,16 @@ elif version_info.major == 2:  # This means that we're running Python 2.X
 
 else:  # This means that we're running some version of Python before 2.X or after 3.X
     stderr.write('[ERROR]: Invalid version of Python detected! This script only supports Python 2 and Python 3.\n')
-    exit()
+    exit(1)
+
+"""
+Create a function and tie SIGINT to said function.
+"""
+def sigintEvent(sig, frame):
+    print('You pressed CTRL + C')
+    exit(0)
+
+signal(SIGINT, sigintEvent)
 
 def error(message):
     """
@@ -151,6 +168,14 @@ class DiscordScraper(object):
         self.buffersize = config.buffer   # The file download buffer that will be stored in memory before offloading to the hard drive.
         self.options    = config.options  # The experimental options portion of the configuration file that will give extra control over how the script functions.
         self.types      = config.types    # The file types that we are wanting to scrape and download to our storage device.
+
+        # Make the options available for quick and easy access.
+        self.validateFileHeaders = config.options['validateFileHeaders']      # The option that will not only check the MIME type of a file but go one step further and check the magic number (header) of the file.
+        self.generateFileChecksums = config.options['generateFileChecksums']  # The option that will generate a document listing off generated checksums for each file that was scraped for duplicate detection.
+        self.sanitizeFileNames = config.options['sanitizeFileNames']          # The option that will rename files and folders to avoid as many problems with filesystem and reserved file names in most operating systems.
+        self.compressImageData = config.options['compressImageData']          # The option that will enable image file compression to save on storage space when downloading data, this will likely be a generic algorithm.
+        self.compressTextData = config.options['compressTextData']            # The option that will enable textual data compression to save on storage space when downloading data, this will most likely be GZIP compression.
+        self.gatherJSONData = config.options['gatherJSONData']                # The option that will determine whether or not the script should cache the response text in JSON formatting.
         
         # Use Python ternary operators to set the class variables for direct messages and guilds that we should scrape.
         self.directs = config.directs if len(config.directs) > 0 else {}
@@ -202,7 +227,7 @@ class DiscordScraper(object):
         request.setHeaders(self.headers)
 
         # Generate the API location from the parameters.
-        url = 'https://discordapp.com/api/{0}/guilds/{1}'.format(self.apiversion, id)
+        url = 'https://discord.com/api/{0}/guilds/{1}'.format(self.apiversion, id)
 
         # Make a request to retrieve the API data from Discord.
         response = request.sendRequest(url)
@@ -226,7 +251,7 @@ class DiscordScraper(object):
             data = loads(response.read())
 
             # Grab the guild name from the data.
-            guildname = DiscordScraper.getSafeName(data['name'])
+            guildname = DiscordScraper.getSafeName(data['name']) if self.sanitizeFileNames else data['name']
 
             # Set the guild name class variable with the guild name.
             self.guildname = '{0}_{1}'.format(id, guildname)
@@ -259,7 +284,7 @@ class DiscordScraper(object):
         request.setHeaders(self.headers)
 
         # Generate the API location from the parameters.
-        url = 'https://discordapp.com/api/{0}/channels/{1}'.format(self.apiversion, id)
+        url = 'https://discord.com/api/{0}/channels/{1}'.format(self.apiversion, id)
 
         # Make a request to retrieve the API data from Discord.
         response = request.sendRequest(url)
@@ -283,7 +308,7 @@ class DiscordScraper(object):
             data = loads(response.read())
 
             # Grab the channel name from the data.
-            channelname = DiscordScraper.getSafeName(data['name'])
+            channelname = DiscordScraper.getSafeName(data['name']) if self.sanitizeFileNames else data['name']
 
             # Set the channel name class variable with the channel name.
             self.channelname = '{0}_{1}'.format(id, channelname)
@@ -302,6 +327,37 @@ class DiscordScraper(object):
         
         # Set the location class variable.
         self.location = folderpath
+
+    def downloadJSON(self, data, year, month, day):
+        """
+        Cache the JSON data from all the scraped channels.
+        :param data: The response data from Discord's backend API that should contain the information we desire.
+        :param month: The month when the data was scraped.
+        :param year: The year when the data was scraped.
+        """
+        
+        # Determine if we have configured the script to cache JSON data to begin with.
+        if self.gatherJSONData:
+
+            # Create a cache directory.
+            cachedir = path.join(getcwd(), 'cached', self.guildname, self.channelname)
+
+            # Check if it already exists, if not then create it.
+            if not path.exists(cachedir):
+                makedirs(cachedir)
+
+            # Generate the direct file name for the cachefile.
+            cachefile = path.join(cachedir, '{0}_{1}_{2}.cache.json'.format(year, month, day))
+
+            # Determine if the cachefile already exists, if so then skip it (TODO this might cause issues for incomplete runs, so this needs to be figured out in due time).
+            if path.isfile(cachefile):
+                return None
+            
+            # Open the cachefile for appending textual data.
+            with open(cachefile, 'w') as cachefilestream:
+                
+                # Write the JSON data directly to the file.
+                dump(data, cachefilestream, indent=4)
     
     def startDownloading(self, url, location):
         """
@@ -314,7 +370,7 @@ class DiscordScraper(object):
         urlparts = url.split('/')
 
         # Generate a file name from the url parts.
-        filename = DiscordScraper.getSafeName('{0}_{1}'.format(urlparts[-2], urlparts[-1]))
+        filename = DiscordScraper.getSafeName('{0}_{1}'.format(urlparts[-2], urlparts[-1])) if self.sanitizeFileNames else '{0}_{1}'.format(urlparts[-2], urlparts[-1])
 
         # Join the file name with the location.
         filename = path.join(location, filename)
@@ -338,68 +394,69 @@ class DiscordScraper(object):
         :param data: The response data from Discord's backend API that should contain the information we desire.
         """
 
-        # Convert the serialized text JSON data into a dictionary.
-        data = loads(data)
+        try:
 
-        # Determine if there are any results from our scrape.
-        if data['total_results'] > 0:
+            # Determine if there are any results from our scrape.
+            if data['total_results'] > 0:
 
-            # Iterate through all messages one-by-one.
-            for messages in data['messages']:
+                # Iterate through all messages one-by-one.
+                for messages in data['messages']:
 
-                # Iterate through each message one-by-one.
-                for message in messages:
+                    # Iterate through each message one-by-one.
+                    for message in messages:
 
-                    # Iterate through all of the attachments to check them one-by-one.
-                    for attachment in message['attachments']:
+                        # Iterate through all of the attachments to check them one-by-one.
+                        for attachment in message['attachments']:
 
-                        # Get the proxied URL for our content.
-                        proxied = attachment['proxy_url']
+                            # Get the proxied URL for our content.
+                            proxied = attachment['proxy_url']
 
-                        # Get the proxied file name from the proxied URL.
-                        proxiedfilename = proxied.split('/')[-1].split('?')[0]
+                            # Get the proxied file name from the proxied URL.
+                            proxiedfilename = proxied.split('/')[-1].split('?')[0]
 
-                        # Get the mimetype for the proxied file name.
-                        proxiedfilemime = DiscordScraper.getFileMimetype(proxiedfilename).split('/')[0]
+                            # Get the mimetype for the proxied file name.
+                            proxiedfilemime = DiscordScraper.getFileMimetype(proxiedfilename).split('/')[0]
 
-                        # Determine if the proxied file is an image file.
-                        if self.types['images'] and proxiedfilemime == 'image':
+                            # Determine if the proxied file is an image file.
+                            if self.types['images'] and proxiedfilemime == 'image':
+                                
+                                # Begin downloading this file if so.
+                                self.startDownloading(proxied, self.location)
                             
-                            # Begin downloading this file if so.
-                            self.startDownloading(proxied, self.location)
-                        
-                        # Determine if the proxied file is a video file.
-                        if self.types['videos'] and proxiedfilemime == 'video':
+                            # Determine if the proxied file is a video file.
+                            if self.types['videos'] and proxiedfilemime == 'video':
+                                
+                                # Begin downloading this file if so.
+                                self.startDownloading(proxied, self.location)
                             
-                            # Begin downloading this file if so.
-                            self.startDownloading(proxied, self.location)
-                        
-                        # Determine if the proxied file is neither an image or a video file.
-                        if self.types['files'] and proxiedfilemime not in ['image', 'video']:
+                            # Determine if the proxied file is neither an image or a video file.
+                            if self.types['files'] and proxiedfilemime not in ['image', 'video']:
+                                
+                                # Begin downloading this file if so.
+                                self.startDownloading(proxied, self.location)
                             
-                            # Begin downloading this file if so.
-                            self.startDownloading(proxied, self.location)
-                        
-                    # Iterate through all of the embedded contents to check them one-by-one.
-                    for embed in message['embeds']:
+                        # Iterate through all of the embedded contents to check them one-by-one.
+                        for embed in message['embeds']:
 
-                        # Determine if there are any embedded images.
-                        if self.types['images'] and embed['type'] in ['image', 'gifv']:
+                            # Determine if there are any embedded images.
+                            if self.types['images'] and embed['type'] in ['image', 'gifv']:
 
-                            # Get the URL for our content.
-                            url = embed['url']
-                            
-                            # Begin downloading this file if so.
-                            self.startDownloading(url, self.location)
+                                # Get the URL for our content.
+                                url = embed['url']
+                                
+                                # Begin downloading this file if so.
+                                self.startDownloading(url, self.location)
 
-                        # Determine if there are any embedded videos.
-                        if self.types['videos'] and embed['type'] == 'video':
+                            # Determine if there are any embedded videos.
+                            if self.types['videos'] and embed['type'] == 'video':
 
-                            # Get the URL for our content.
-                            url = embed['url']
+                                # Get the URL for our content.
+                                url = embed['url']
 
-                            # Begin downloading this file if so.
-                            self.startDownloading(url, self.location)
+                                # Begin downloading this file if so.
+                                self.startDownloading(url, self.location)
+        except:
+            pass
     
     @staticmethod
     def randomString(length):

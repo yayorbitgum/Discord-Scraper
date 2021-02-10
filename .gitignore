@@ -10,9 +10,12 @@
 # We also do not want to accidentally push any of the scraped data to our Github either.
 scrapes/
 
+# We do not want to accidentally push any of the cached JSON data to our Github either.
+cached/
+
 # We don't want to push any precompiled Python files to be pushed either.
 module/__pycache__/
 module/*.pyc
 
-# This might seem strange, but I'm using a shell script to clean up previous scrapes between runs.
-clear
+# Do not modify config.unmodified.json, instead copy it and name it "config.json" so that we don't accidentally push your config to your Github.
+config.json

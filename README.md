@@ -63,12 +63,20 @@ Run the script to start the downloading process.
 - Config options handling
 - Non-image and non-video embedded content grabbing
 - Text grabbing
-- Response data caching
 - Ratelimiter mitigation
 
 ## Changelog
 
 **The dates below are in YYYY-MM-DD formatting (ISO 8601).**
+
+2021-02-10 - Starting the path to finalizing the experimental branch:
+* Fixed a major oversight when it comes to scraping more than 25 posts for each day (more than 25 requires an offset query to be added to the undocumented API call).
+* Allowing for direct media grabbing alongside JSON caching to save on time (it was faster to grab both JSON and media simultaneously day-by-day as opposed to grabbing JSON data in bulk and then checking each JSON file afterwards).
+* Finally figured out a method of getting the script to stop whenever `CTRL + C` is pressed on the keyboard (apparently sys.exit cares about flushing stdout buffers as opposed to os._exit)
+
+2020-12-30 - Alleviating some Issues:
+* Opting for JSON caching as opposed to direct media grabbing *(smaller and comes with more info)*.
+* Adding the use of a documented API function to retrieve the last known post in the channel.
 
 2020-11-09 - Major Repository Overhaul:
 * Removed the experimental branches and renamed the master branch.
