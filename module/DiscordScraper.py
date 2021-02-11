@@ -242,7 +242,7 @@ class DiscordScraper(object):
             randomguildname = DiscordScraper.randomString(8)
 
             # Set the guild name class variable with our new name.
-            self.guildname = '{0}_{1}'.format(id, randomguildname)
+            self.guildname = u'{0}_{1}'.format(id, randomguildname)
         
         # Otherwise use the gathered guild data to retrieve the guild name.
         else:
@@ -254,7 +254,7 @@ class DiscordScraper(object):
             guildname = DiscordScraper.getSafeName(data['name']) if self.sanitizeFileNames else data['name']
 
             # Set the guild name class variable with the guild name.
-            self.guildname = '{0}_{1}'.format(id, guildname)
+            self.guildname = u'{0}_{1}'.format(id, guildname)
 
     
     def grabChannelName(self, id, dm=None):
@@ -299,7 +299,7 @@ class DiscordScraper(object):
             randomchannelname = DiscordScraper.randomString(8)
 
             # Set the channel name class variable with our new name.
-            self.channelname = '{0}_{1}'.format(id, randomchannelname)
+            self.channelname = u'{0}_{1}'.format(id, randomchannelname)
         
         # Otherwise use the gathered channel data to retrieve the channel name.
         else:
@@ -311,7 +311,7 @@ class DiscordScraper(object):
             channelname = DiscordScraper.getSafeName(data['name']) if self.sanitizeFileNames else data['name']
 
             # Set the channel name class variable with the channel name.
-            self.channelname = '{0}_{1}'.format(id, channelname)
+            self.channelname = u'{0}_{1}'.format(id, channelname)
     
     def createFolders(self):
         """
