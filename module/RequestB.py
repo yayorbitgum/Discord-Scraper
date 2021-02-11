@@ -1,6 +1,6 @@
 """
 @author:  Dracovian
-@date:    2020-11-09
+@date:    2021-02-10
 @license: WTFPL
 """
 
@@ -63,7 +63,7 @@ class DiscordRequest(object):
         """
        
         # Sleep for about half a second to avoid ratelimit.
-        sleep(1)
+        sleep(0.5)
 
         # Split the URL into parts.
         urlparts = url.split('/')
