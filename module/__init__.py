@@ -7,8 +7,8 @@ __contact__ = 'https://github.com/Dracovian'
 # There's no copyright information for this.
 __copyright__ = None
 
-# November 9, 2020 (ISO 8601 date formatting)
-__date__ = '2020-11-09'
+# February 10, 2021 (ISO 8601 date formatting)
+__date__ = '2021-02-10'
 
 # Crediting those who have contributed to the Discord Scraper repository on Github which showcased this library for the first time.
 __credits__ = ['https://github.com/mukatee', 'https://github.com/MRosenst']
