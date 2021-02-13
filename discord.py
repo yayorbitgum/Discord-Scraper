@@ -168,6 +168,11 @@ def start(scraper, guild, channel, day=None):
     :param guild: The ID for the guild that we're wanting to scrape from.
     :param channel: The ID for the channel that we're wanting to scrape from.
     """
+    
+    # Determine if we've already initialized the DiscordScraper class, if so then clean it out and re-initialize a new one.
+    if scraper is not None:
+        del scraper
+        scraper = DiscordScraper()
 
     # Determine if the day is empty, default to the current day if so.
     if day is None:
