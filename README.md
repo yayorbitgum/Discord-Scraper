@@ -63,7 +63,6 @@ Run the script to start the downloading process.
 - Config options handling
 - Non-image and non-video embedded content grabbing
 - Text grabbing
-- Ratelimiter mitigation
 
 ## Changelog
 
