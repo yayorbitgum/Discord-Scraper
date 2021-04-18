@@ -28,6 +28,21 @@
         "text": true
     },
 
-    "directs": {},
-    "guilds": {}
+    "directs": {
+        "direct message channel id": "anything you want to name it will become the folder name that stores the files",
+        "another direct message channel id": "this will come in handy whenever this branch has DM scraping implemented, right now that's on the backburner of bugfixing and feature implementation."
+    },
+    
+    "guilds": {
+        "guild/server 1 id": [
+            "guild/server 1 channel 1 id",
+            "guild/server 1 channel 2 id",
+            "guild/server 1 channel 3 id"
+        ],
+        "guild/server 2 id": [
+            "guild/server 2 channel 1 id",
+            "guild/server 2 channel 2 id",
+            "guild/server 2 channel 3 id",
+        ]
+    }
 }
