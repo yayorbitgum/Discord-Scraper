@@ -84,7 +84,7 @@ def error(message):
     stderr.write('[ERROR]: {0}\n'.format(message))
 
     # Halt the script right here, do not continue running the script after this point.
-    exit()
+    exit(1)
 
 def warn(message):
     """
