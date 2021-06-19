@@ -25,6 +25,11 @@ time.sleep: Used to pause the script for a set time.
 """
 from time import sleep
 
+"""
+json.loads: Used to convert a serialized string into a dictionary object.
+"""
+from json import loads
+
 def warn(message):
     """
     Throw a warning message without halting the script.
@@ -61,9 +66,6 @@ class DiscordRequest(object):
         Send a request to the target URL and return the response data.
         :param url: The URL to the target that we're wanting to grab data from.
         """
-       
-        # Sleep for about half a second to avoid ratelimit.
-        sleep(1)
 
         # Split the URL into parts.
         urlparts = url.split('/')
@@ -107,6 +109,15 @@ class DiscordRequest(object):
         
         # Otherwise throw a warning message to acknowledge a failed connection.
         else: warn('HTTP {0} from {1}.'.format(response.status, url))
+
+        # Handle HTTP 429 Too Many Requests
+        if response.status == 429:
+            retry_after = loads(response.read()).get('retry_after', None)
+
+            if retry_after:   
+                # Sleep for 1 extra second as buffer
+                sleep(1 + retry_after)
+                return sendRequest(self, url)
 
         # Return nothing to signify a failed request.
         return None
