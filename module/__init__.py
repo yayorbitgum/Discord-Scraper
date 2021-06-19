@@ -11,7 +11,7 @@ __copyright__ = None
 __date__ = '2021-02-10'
 
 # Crediting those who have contributed to the Discord Scraper repository on Github which showcased this library for the first time.
-__credits__ = ['https://github.com/mataha', 'https://github.com/mukatee', 'https://github.com/MRosenst']
+__credits__ = ['https://github.com/mataha', 'https://github.com/mukatee', 'https://github.com/MRosenst', 'https://github.com/codekaust']
 
 # The license for this library is the same as the Discord Scraper repository.
 __license__ = 'WTFPL'
