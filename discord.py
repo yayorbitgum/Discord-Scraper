@@ -25,6 +25,7 @@ module.DiscordScraper.loads: Used to access the json.loads function documented i
 """
 from module.DiscordScraper import loads
 
+
 def getLastMessageGuild(scraper, guild, channel):
     """
     Use the official Discord API to retrieve the last publicly viewable message in a channel.
@@ -46,7 +47,7 @@ def getLastMessageGuild(scraper, guild, channel):
         # If we returned nothing then return nothing.
         if response is None:
             return None
-        
+
         # Read the response data and convert it into a dictionary object.
         data = loads(response.read())
 
@@ -59,6 +60,7 @@ def getLastMessageGuild(scraper, guild, channel):
     except Exception as ex:
         print(ex)
 
+
 def startDM(scraper, alias, channel, day=None):
     """
     The initialization function for the scraper script to grab direct message contents.
@@ -67,7 +69,6 @@ def startDM(scraper, alias, channel, day=None):
     :param channel: The ID for the direct message we're wanting to scrape from.
     :param day: The datetime object for the day that we're wanting to scrape.
     """
-
     # TODO: I still need to get around to implementing DM scraping,
     #  hopefully I can figure out a method of getting the true DM url
     #  from a user ID/Snowflake value to make things easier to configure.
@@ -94,7 +95,8 @@ def startGuild(scraper, guild, channel, day=None):
     snowflakes = DiscordScraper.getDayBounds(day.day, day.month, day.year)
 
     # Generate a valid URL to the undocumented API function for the search feature.
-    search = 'https://discord.com/api/{0}/channels/{1}/messages/search?min_id={2}&max_id={3}&{4}'.format(scraper.apiversion, channel, snowflakes[0], snowflakes[1], scraper.query)
+    search = 'https://discord.com/api/{0}/channels/{1}/messages/search?min_id={2}&max_id={3}&{4}'.format(
+        scraper.apiversion, channel, snowflakes[0], snowflakes[1], scraper.query)
 
     # Update the HTTP request headers to set the referer to the current guild channel URL.
     scraper.headers.update({'Referer': 'https://discord.com/channels/{0}/{1}'.format(guild, channel)})
@@ -134,7 +136,8 @@ def startGuild(scraper, guild, channel, day=None):
 
         for page in range(2, pages + 1):
             # Generate a valid URL to the undocumented API function for the search feature.
-            search = 'https://discord.com/api/{0}/channels/{1}/messages/search?min_id={2}&max_id={3}&{4}&offset={5}'.format(scraper.apiversion, channel, snowflakes[0], snowflakes[1], scraper.query, 25 * (page - 1))
+            search = 'https://discord.com/api/{0}/channels/{1}/messages/search?min_id={2}&max_id={3}&{4}&offset={5}'.format(
+                scraper.apiversion, channel, snowflakes[0], snowflakes[1], scraper.query, 25 * (page - 1))
             # Update the HTTP request headers to set the referer to the current guild channel URL.
             scraper.headers.update({'Referer': 'https://discord.com/channels/{0}/{1}'.format(guild, channel)})
             # ----------------------------------------------------
@@ -158,7 +161,7 @@ def startGuild(scraper, guild, channel, day=None):
     # ----------------------------------------------------
     # Set the day to yesterday.
     day += timedelta(days=-1)
-    
+
     # Return the new day
     return day
 
@@ -184,7 +187,7 @@ def start(scraper, guild, channel, day=None):
     # Determine if the year is no less than 2015 since any time before this point will be guaranteed invalid.
     if day.year <= 2014:
         exit(0)
-        
+
     # The smallest snowflake that Discord recognizes is from January 1, 2015.
     while day > datetime(2015, 1, 1):
         day = startGuild(scraper, guild, channel, day)
@@ -203,7 +206,7 @@ if __name__ == '__main__':
             lastdate = getLastMessageGuild(discordscraper, guild, channel)
             # Start the scraper for the current channel.
             start(discordscraper, guild, channel, lastdate)
-    
+
     # Iterate through the direct messages to scrape.
     for alias, channel in discordscraper.directs.items():
         # Start the scraper for the current direct message.
