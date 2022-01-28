@@ -117,7 +117,7 @@ class DiscordScraper(object):
         if configfile is None:
 
             # Set it to the default value of "config.json"
-            configfile = 'config.json'
+            configfile = 'config/config.json'
         
         # Determine if the apiversion argument is not set.
         if apiversion is None:
