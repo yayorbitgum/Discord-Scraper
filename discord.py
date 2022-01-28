@@ -68,8 +68,19 @@ def startDM(scraper, alias, channel, day=None):
     :param day: The datetime object for the day that we're wanting to scrape.
     """
 
-    # TODO: I still need to get around to implementing DM scraping, hopefully I can figure out a method of getting the true DM url from a user ID/Snowflake value to make things easier to configure.
+    # TODO: I still need to get around to implementing DM scraping,
+    #  hopefully I can figure out a method of getting the true DM url
+    #  from a user ID/Snowflake value to make things easier to configure.
     pass
+
+
+def grab_text_message_content(data):
+    with open("scrapes/messages_test.txt", "a", encoding="utf-8") as messages_file:
+        for message in data['messages']:
+            unpacked = message[0]
+            write_line = f"{unpacked['author']['username']}: {unpacked['content']}\n"
+            messages_file.write(write_line)
+
 
 def startGuild(scraper, guild, channel, day=None):
     """
@@ -88,62 +99,54 @@ def startGuild(scraper, guild, channel, day=None):
     # Update the HTTP request headers to set the referer to the current guild channel URL.
     scraper.headers.update({'Referer': 'https://discord.com/channels/{0}/{1}'.format(guild, channel)})
 
-    try:
-        # Generate the guild name.
-        if scraper.guildname == None:
-            scraper.grabGuildName(guild)
+    # ----------------------------------------------------
+    # Generate the guild name.
+    if scraper.guildname == None:
+        scraper.grabGuildName(guild)
 
-        # Generate the channel name.
-        if scraper.channelname == None:
-            scraper.grabChannelName(channel)
+    # Generate the channel name.
+    if scraper.channelname == None:
+        scraper.grabChannelName(channel)
 
-        # Generate the scrape folders. TODO: Re-enable this before pushing to the public.
-        scraper.createFolders()
+    # Generate the scrape folders.
+    scraper.createFolders()
 
-        # Grab the API response for the search query URL.
-        response = DiscordScraper.requestData(search, scraper.headers)
+    # ----------------------------------------------------
+    # Grab the API response for the search query URL.
+    response = DiscordScraper.requestData(search, scraper.headers)
+    # If we returned nothing then continue on to the previous day.
+    if response is None:
+        # Set the day to yesterday.
+        day += timedelta(days=-1)
+        # Recursive recall with next day.
+        startGuild(scraper, guild, channel, day)
 
-        # If we returned nothing then continue on to the previous day.
-        if response is None:
+    # ----------------------------------------------------
+    # Read the response data.
+    data = loads(response.read().decode('iso-8859-1'))
+    # Get the number of posts.
+    posts = data['total_results']
 
-            # Set the day to yesterday.
-            day += timedelta(days=-1)
+    # ----------------------------------------------------
+    # Determine if we have multiple offsets.
+    if (posts > 25):
+        pages = int(posts / 25) + 1
 
-            # Recursively call this function with the new day.
-            startGuild(scraper, guild, channel, day)
-        
-        # Read the response data.
-        data = loads(response.read().decode('iso-8859-1'))
-        
-        # Get the number of posts.
-        posts = data['total_results']
-        
-        # Determine if we have multiple offsets.
-        if (posts > 25):
-            pages = int(posts / 25) + 1
-            
-            for page in range(2, pages + 1):
-                # Generate a valid URL to the undocumented API function for the search feature.
-                search = 'https://discord.com/api/{0}/channels/{1}/messages/search?min_id={2}&max_id={3}&{4}&offset={5}'.format(scraper.apiversion, channel, snowflakes[0], snowflakes[1], scraper.query, 25 * (page - 1))
-
-                # Update the HTTP request headers to set the referer to the current guild channel URL.
-                scraper.headers.update({'Referer': 'https://discord.com/channels/{0}/{1}'.format(guild, channel)})
-
-                try:
-
-                    # Grab the API response for the search query URL.
-                    response = DiscordScraper.requestData(search, scraper.headers)
-                    
-                    # Read the response data.
-                    data2 = loads(response.read().decode('iso-8859-1'))
-                    
-                    # Append the messages from data2 into data.
-                    for message in data2['messages']:
-                        data['messages'].append(message)
-                        
-                except:
-                    pass
-            
+        for page in range(2, pages + 1):
+            # Generate a valid URL to the undocumented API function for the search feature.
+            search = 'https://discord.com/api/{0}/channels/{1}/messages/search?min_id={2}&max_id={3}&{4}&offset={5}'.format(scraper.apiversion, channel, snowflakes[0], snowflakes[1], scraper.query, 25 * (page - 1))
+            # Update the HTTP request headers to set the referer to the current guild channel URL.
+            scraper.headers.update({'Referer': 'https://discord.com/channels/{0}/{1}'.format(guild, channel)})
+            # ----------------------------------------------------
+            # Grab the API response for the search query URL.
+            response = DiscordScraper.requestData(search, scraper.headers)
+            # Read the response data.
+            data2 = loads(response.read().decode('iso-8859-1'))
+            # ----------------------------------------------------
+            grab_text_message_content(data2)
+            # Append the messages from data2 into data.
+            for message in data2['messages']:
+                data['messages'].append(message)
 
         # Cache the JSON data if there's anything to cache (don't fill the cache directory with useless API response junk).
         if posts > 0:
@@ -151,16 +154,16 @@ def startGuild(scraper, guild, channel, day=None):
 
         # Check the mimetypes of the embedded and attached files.
         scraper.checkMimetypes(data)
-        
-    except:
-        pass
 
+    # ----------------------------------------------------
     # Set the day to yesterday.
     day += timedelta(days=-1)
     
     # Return the new day
     return day
-        
+
+
+# ----------------------------------------------------------------------------------------------------------------------
 def start(scraper, guild, channel, day=None):
     """
     The initialization function for the scraper script.
@@ -168,8 +171,8 @@ def start(scraper, guild, channel, day=None):
     :param guild: The ID for the guild that we're wanting to scrape from.
     :param channel: The ID for the channel that we're wanting to scrape from.
     """
-    
-    # Determine if we've already initialized the DiscordScraper class, if so then clean it out and re-initialize a new one.
+    # Determine if we've already initialized the DiscordScraper class.
+    # If so then clean it out and re-initialize a new one.
     if scraper is not None:
         del scraper
         scraper = DiscordScraper()
@@ -186,28 +189,22 @@ def start(scraper, guild, channel, day=None):
     while day > datetime(2015, 1, 1):
         day = startGuild(scraper, guild, channel, day)
 
-if __name__ == '__main__':
-    """
-    This is the entrypoint for our script since __name__ is going to be set to __main__ by default.
-    """
 
+# ----------------------------------------------------------------------------------------------------------------------
+if __name__ == '__main__':
     # Create a variable that references the Discord Scraper class.
     discordscraper = DiscordScraper()
 
     # Iterate through the guilds to scrape.
     for guild, channels in discordscraper.guilds.items():
-
         # Iterate through the channels to scrape in the guild.
         for channel in channels:
-
             # Retrieve the datetime object for the most recent post in the channel.
             lastdate = getLastMessageGuild(discordscraper, guild, channel)
-
             # Start the scraper for the current channel.
             start(discordscraper, guild, channel, lastdate)
     
     # Iterate through the direct messages to scrape.
     for alias, channel in discordscraper.directs.items():
-
         # Start the scraper for the current direct message.
         startDM(discordscraper, alias, channel)
