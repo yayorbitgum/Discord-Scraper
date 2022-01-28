@@ -117,7 +117,7 @@ class DiscordRequest(object):
             if retry_after:   
                 # Sleep for 1 extra second as buffer
                 sleep(1 + retry_after)
-                return sendRequest(self, url)
+                return self.sendRequest(url)
 
         # Return nothing to signify a failed request.
         return None
