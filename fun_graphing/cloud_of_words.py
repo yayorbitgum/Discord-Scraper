@@ -17,7 +17,7 @@ with open('../scrapes/messages_test.txt', 'r', encoding='utf-8') as f:
         normalize_plurals=True,
         stopwords=ignore_words,
         background_color='#1d1e25',
-        colormap='plasma',
+        colormap='twilight',
         # mask=leon_np_frame
     ).generate(f.read())
 
