@@ -28,7 +28,6 @@ os.path:     Used to combine and split file paths since Windows uses a different
 os._exit:    Used to halt the script without calling cleanup handlers, flushing stdio buffers, or any cleanup routines (we really want this script to stop at this point)
 """
 from os import makedirs, getcwd, path
-from os import _exit as exit
 
 """
 signal.SIGINT: Used to detect CTRL+C (Command+C) inputs during runtime.
@@ -68,11 +67,15 @@ else:  # This means that we're running some version of Python before 2.X or afte
 """
 Create a function and tie SIGINT to said function.
 """
+
+
 def sigintEvent(sig, frame):
     print('You pressed CTRL + C')
     exit(0)
 
+
 signal(SIGINT, sigintEvent)
+
 
 def error(message):
     """
@@ -86,19 +89,25 @@ def error(message):
     # Halt the script right here, do not continue running the script after this point.
     exit(1)
 
+
 def warn(message):
     """
     Throw a warning message without halting the script.
     :param message: A string that will be printed out to STDERR.
     """
-
+    if "429" in message:
+        stderr.write(f"Rate limited by Discord API. Waiting a bit..")
+        return
     # Append our message with a newline character.
-    stderr.write('[WARN] {0}\n'.format(message))
+    warn_message = f"[WARN]: {message}"
+    stderr.write(warn_message)
+
 
 class DiscordConfig(object):
     """
     This class will only serve the purpose of converting a dictionary object into a class object.
     """
+
 
 class DiscordScraper(object):
     """
@@ -115,34 +124,32 @@ class DiscordScraper(object):
 
         # Determine if the configfile argument is not set.
         if configfile is None:
-
             # Set it to the default value of "config.json"
             configfile = 'config/config.json'
-        
+
         # Determine if the apiversion argument is not set.
         if apiversion is None:
-            
             # Set it to the default value of "v8"
             apiversion = 'v8'
-        
+
         # Generate a direct file path to the configuration file.
         configfile = path.join(getcwd(), configfile)
 
         # Throw an error if the configuration file doesn't exist.
         if not path.exists(configfile):
             error('Configuration file can not be found at the following location: {0}'.format(configfile))
-        
+
         # Open the config file in text-mode for reading.
         with open(configfile, 'r') as configfilestream:
 
             # Read the entire config file.
             configfiledata = configfilestream.read()
-        
+
         # Convert the serialized JSON contents of the configuration file into a dictionary.
         configdata = loads(configfiledata)
 
         # Convert the configuration dictionary into a class object.
-        config = type('DiscordConfig', (object, ), configdata)()
+        config = type('DiscordConfig', (object,), configdata)()
 
         # Generate a direct file path to the authorization token file.
         tokenfile = path.join(getcwd(), config.tokenfile)
@@ -150,36 +157,44 @@ class DiscordScraper(object):
         # Throw an error if the authorization token file doesn't exist.
         if not path.exists(tokenfile):
             error('Authorization token file can not be found at the following location: {0}'.format(tokenfile))
-        
+
         # Open the authorization token file in text-mode for reading.
         with open(tokenfile, 'r') as tokenfilestream:
 
             # Read the first line of the authorization token file.
             tokenfiledata = tokenfilestream.readline().rstrip()
-        
+
         # Create a dictionary to store the HTTP request headers that we will be using for all requests.
         self.headers = {
-            'User-Agent': config.useragent,    # The user-agent string that tells the server which browser, operating system, and rendering engine we're using.
-            'Authorization': tokenfiledata     # The authorization token that authorizes this script to carry out actions with your account, this script only requires this to access the data on the specified guilds and channels for scraping purposes. NEVER UNDER ANY CIRCUMSTANCE SHARE THIS VALUE TO ANYONE YOU DO NOT TRUST!
+            'User-Agent': config.useragent,
+            # The user-agent string that tells the server which browser, operating system, and rendering engine we're using.
+            'Authorization': tokenfiledata
+            # The authorization token that authorizes this script to carry out actions with your account, this script only requires this to access the data on the specified guilds and channels for scraping purposes. NEVER UNDER ANY CIRCUMSTANCE SHARE THIS VALUE TO ANYONE YOU DO NOT TRUST!
         }
 
         # Create some class variables to store the configuration file data.
-        self.apiversion = apiversion      # The backend Discord API version which denotes which API functions are available for use and which are deprecated.
-        self.buffersize = config.buffer   # The file download buffer that will be stored in memory before offloading to the hard drive.
-        self.options    = config.options  # The experimental options portion of the configuration file that will give extra control over how the script functions.
-        self.types      = config.types    # The file types that we are wanting to scrape and download to our storage device.
+        self.apiversion = apiversion  # The backend Discord API version which denotes which API functions are available for use and which are deprecated.
+        self.buffersize = config.buffer  # The file download buffer that will be stored in memory before offloading to the hard drive.
+        self.options = config.options  # The experimental options portion of the configuration file that will give extra control over how the script functions.
+        self.types = config.types  # The file types that we are wanting to scrape and download to our storage device.
 
         # Make the options available for quick and easy access.
-        self.validateFileHeaders = config.options['validateFileHeaders']      # The option that will not only check the MIME type of a file but go one step further and check the magic number (header) of the file.
-        self.generateFileChecksums = config.options['generateFileChecksums']  # The option that will generate a document listing off generated checksums for each file that was scraped for duplicate detection.
-        self.sanitizeFileNames = config.options['sanitizeFileNames']          # The option that will rename files and folders to avoid as many problems with filesystem and reserved file names in most operating systems.
-        self.compressImageData = config.options['compressImageData']          # The option that will enable image file compression to save on storage space when downloading data, this will likely be a generic algorithm.
-        self.compressTextData = config.options['compressTextData']            # The option that will enable textual data compression to save on storage space when downloading data, this will most likely be GZIP compression.
-        self.gatherJSONData = config.options['gatherJSONData']                # The option that will determine whether or not the script should cache the response text in JSON formatting.
-        
+        self.validateFileHeaders = config.options[
+            'validateFileHeaders']  # The option that will not only check the MIME type of a file but go one step further and check the magic number (header) of the file.
+        self.generateFileChecksums = config.options[
+            'generateFileChecksums']  # The option that will generate a document listing off generated checksums for each file that was scraped for duplicate detection.
+        self.sanitizeFileNames = config.options[
+            'sanitizeFileNames']  # The option that will rename files and folders to avoid as many problems with filesystem and reserved file names in most operating systems.
+        self.compressImageData = config.options[
+            'compressImageData']  # The option that will enable image file compression to save on storage space when downloading data, this will likely be a generic algorithm.
+        self.compressTextData = config.options[
+            'compressTextData']  # The option that will enable textual data compression to save on storage space when downloading data, this will most likely be GZIP compression.
+        self.gatherJSONData = config.options[
+            'gatherJSONData']  # The option that will determine whether or not the script should cache the response text in JSON formatting.
+
         # Use Python ternary operators to set the class variables for direct messages and guilds that we should scrape.
         self.directs = config.directs if len(config.directs) > 0 else {}
-        self.guilds  = config.guilds  if len(config.guilds ) > 0 else {}
+        self.guilds = config.guilds if len(config.guilds) > 0 else {}
 
         # Create a blank guild name, channel name, and folder location class variable.
         self.guildname = None
@@ -189,34 +204,30 @@ class DiscordScraper(object):
         # Halt the script if there are no direct messages or guilds to scrape, since it would be useless to run this script without any data to scrape.
         if len(config.directs) == 0 and len(config.guilds) == 0:
             error('No guilds or DMs were set to be grabbed, exiting!')
-        
+
         # Create a class variable to store the URI query for our search requests.
         self.query = DiscordScraper.generateQueryBody(
-            images = config.query['images'],
-            files  = config.query['files' ],
-            embeds = config.query['embeds'],
-            links  = config.query['links' ],
-            videos = config.query['videos'],
-            nsfw   = config.query['nsfw'  ]
+            images=config.query['images'],
+            files=config.query['files'],
+            embeds=config.query['embeds'],
+            links=config.query['links'],
+            videos=config.query['videos'],
+            nsfw=config.query['nsfw']
         )
-    
+
     def grabGuildName(self, id, dm=None):
         """
         Send a request to retrieve the guild name by its ID.
         :param id: The ID for the guild we want to retrieve the name for.
         :param dm: A true or false (boolean) value that determines if we're scraping a direct message.
         """
-
         # If the dm is empty, then set it to false.
         if dm is None:
             dm = False
-
         # Determine if we're in a dm.
         if dm:
-
             # Just pass the safe name on through.
             self.guildname = DiscordScraper.getSafeName(id)
-
             # Exit the function.
             return None
 
@@ -243,7 +254,7 @@ class DiscordScraper(object):
 
             # Set the guild name class variable with our new name.
             self.guildname = u'{0}_{1}'.format(id, randomguildname)
-        
+
         # Otherwise use the gathered guild data to retrieve the guild name.
         else:
 
@@ -256,7 +267,6 @@ class DiscordScraper(object):
             # Set the guild name class variable with the guild name.
             self.guildname = u'{0}_{1}'.format(id, guildname)
 
-    
     def grabChannelName(self, id, dm=None):
         """
         Send a request to retrieve the channel name by its ID.
@@ -270,7 +280,6 @@ class DiscordScraper(object):
 
         # Determine if we're in a dm.
         if dm:
-
             # Just set the ID.
             self.channelname = id
 
@@ -300,7 +309,7 @@ class DiscordScraper(object):
 
             # Set the channel name class variable with our new name.
             self.channelname = u'{0}_{1}'.format(id, randomchannelname)
-        
+
         # Otherwise use the gathered channel data to retrieve the channel name.
         else:
 
@@ -312,7 +321,7 @@ class DiscordScraper(object):
 
             # Set the channel name class variable with the channel name.
             self.channelname = u'{0}_{1}'.format(id, channelname)
-    
+
     def createFolders(self):
         """
         Create the folder structure for the particular guild/DM and channels that we're wanting to scrape.
@@ -324,7 +333,7 @@ class DiscordScraper(object):
         # Create the path if it does not exist.
         if not path.exists(folderpath):
             makedirs(folderpath)
-        
+
         # Set the location class variable.
         self.location = folderpath
 
@@ -335,7 +344,7 @@ class DiscordScraper(object):
         :param month: The month when the data was scraped.
         :param year: The year when the data was scraped.
         """
-        
+
         # Determine if we have configured the script to cache JSON data to begin with.
         if self.gatherJSONData:
 
@@ -352,25 +361,27 @@ class DiscordScraper(object):
             # Determine if the cachefile already exists, if so then skip it (TODO this might cause issues for incomplete runs, so this needs to be figured out in due time).
             if path.isfile(cachefile):
                 return None
-            
+
             # Open the cachefile for appending textual data.
             with open(cachefile, 'w') as cachefilestream:
-                
+
                 # Write the JSON data directly to the file.
                 dump(data, cachefilestream, indent=4)
-    
+
     def startDownloading(self, url, location):
         """
         Call the Requests.download function to begin downloading our files.
         :param url: The direct URL (proxied URL to protect from requesting any malicious sites that might be watching out for the request header that stores our authorization token) for our content.
         :param location: The folder that we will be downloading the content into.
         """
-        
+
         # Split the url into parts.
         urlparts = url.split('/')
 
         # Generate a file name from the url parts.
-        filename = DiscordScraper.getSafeName('{0}_{1}'.format(urlparts[-2], urlparts[-1])) if self.sanitizeFileNames else '{0}_{1}'.format(urlparts[-2], urlparts[-1])
+        filename = DiscordScraper.getSafeName(
+            '{0}_{1}'.format(urlparts[-2], urlparts[-1])) if self.sanitizeFileNames else '{0}_{1}'.format(urlparts[-2],
+                                                                                                          urlparts[-1])
 
         # Join the file name with the location.
         filename = path.join(location, filename)
@@ -378,7 +389,7 @@ class DiscordScraper(object):
         # Skip this function if the file already exists.
         if path.isfile(filename):
             return None
-        
+
         # Create a request.
         request = DiscordRequest()
 
@@ -419,21 +430,19 @@ class DiscordScraper(object):
 
                             # Determine if the proxied file is an image file.
                             if self.types['images'] and proxiedfilemime == 'image':
-                                
                                 # Begin downloading this file if so.
                                 self.startDownloading(proxied, self.location)
-                            
+
                             # Determine if the proxied file is a video file.
                             if self.types['videos'] and proxiedfilemime == 'video':
-                                
                                 # Begin downloading this file if so.
                                 self.startDownloading(proxied, self.location)
-                            
+
                             # Determine if the proxied file is neither an image or a video file.
                             if self.types['files'] and proxiedfilemime not in ['image', 'video']:
                                 # Begin downloading this file if so.
                                 self.startDownloading(proxied, self.location)
-                            
+
                         # Iterate through all of the embedded contents to check them one-by-one.
                         for embed in message['embeds']:
 
@@ -453,7 +462,7 @@ class DiscordScraper(object):
                                 self.startDownloading(url, self.location)
         except Exception as e:
             print(f"Error in MineTypes check: {e}")
-    
+
     @staticmethod
     def randomString(length):
         """
@@ -480,10 +489,10 @@ class DiscordScraper(object):
         # Determine if the mimetype value is empty, return a blob mimetype if it is empty.
         if mimetype is None:
             return 'application/octet-stream'
-        
+
         # Return the mimetype if it is not empty.
         return mimetype
-    
+
     @staticmethod
     def timestampToSnowflake(timestamp):
         """
@@ -499,7 +508,7 @@ class DiscordScraper(object):
 
         # Return the timestamp value bitshifted to the left by 22 bits.
         return int(timestamp) << 22
-    
+
     @staticmethod
     def snowflakeToTimestamp(snowflake):
         """
@@ -515,7 +524,7 @@ class DiscordScraper(object):
 
         # Return the snowflake value divided by 1000 to get the timestamp value to the nearest second.
         return snowflake / 1000.0
-    
+
     @staticmethod
     def getDayBounds(day, month, year):
         """
@@ -526,7 +535,7 @@ class DiscordScraper(object):
         """
 
         # Get the minimum timestamp value or 00:00 (12:00 AM).
-        mintime = mktime((year, month, day,  0,  0,  0, -1, -1, -1))
+        mintime = mktime((year, month, day, 0, 0, 0, -1, -1, -1))
 
         # Get the maximum timestamp value or 23:59 (11:59 PM).
         maxtime = mktime((year, month, day, 23, 59, 59, -1, -1, -1))
@@ -539,7 +548,7 @@ class DiscordScraper(object):
 
         # Return an array with the minimum snowflake and maximum snowflake values in it.
         return [minsnow, maxsnow]
-    
+
     @staticmethod
     def getSafeName(name):
         """
@@ -549,14 +558,14 @@ class DiscordScraper(object):
 
         # Create an array storing all the disallowed values that will interfere with certain operating system file naming schemes.
         disallowed = [
-            '/dev',          # Linux and BSD systems will store their device files in this directory.
-            '/devices',      # Solaris will store their device files in this directory.
-            'Devices:',      # RISC OS will store their device files in this format.
-            '\\DEV','/DEV',  # MS-DOS and PC DOES 2.x store theirs in these places.
-            'U:\\DEV',       # MagiC, MiNT, and MultiTOS from Atari stores in this place.
-            '\\\\devices\\', # Windows 9x device file location.
-            '\\\\.\\',       # Windows NT device file location.
-            
+            '/dev',  # Linux and BSD systems will store their device files in this directory.
+            '/devices',  # Solaris will store their device files in this directory.
+            'Devices:',  # RISC OS will store their device files in this format.
+            '\\DEV', '/DEV',  # MS-DOS and PC DOES 2.x store theirs in these places.
+            'U:\\DEV',  # MagiC, MiNT, and MultiTOS from Atari stores in this place.
+            '\\\\devices\\',  # Windows 9x device file location.
+            '\\\\.\\',  # Windows NT device file location.
+
             # Prepare yourself for a list of device file names that are often reserved on Windows and OS/2.
             'CON', 'PRN', 'AUX', 'NUL', 'CLOCK', 'CLOCK$', 'KEYBD$', 'KBD$', 'SCREEN$', 'POINTER$', 'MOUSE$',
             '$IDLE$', 'CONFIG$', 'LST', 'PLT', 'LPT1', 'LPT2', 'LPT3', 'LPT4', 'LPT5', 'LTP6', 'LPT7', 'LPT8',
@@ -566,7 +575,6 @@ class DiscordScraper(object):
 
         # Determine if the filename is in any of the disallowed names above.
         if name in disallowed:
-            
             # Get the file extension from the filename.
             extension = name.split('.')[-1]
 
@@ -575,22 +583,21 @@ class DiscordScraper(object):
 
             # Set the name variable to the newly generated name.
             name = '{0}.{1}'.format(randname, extension)
-        
+
         # Create a variable to store the valid characters of our file name.
         valid = []
 
         # Iterate through each character of our file name to ensure that there's no disallowed characters in there.
         for char in name:
-            
+
             # Determine if the character is not in the list of invalid characters.
             if char not in '\\/<>:"|?*':
-
                 # Append the character to the valid character array.
                 valid.append(char)
-        
+
         # Join the array of characters into a string and return that value.
         return ''.join(valid)
-    
+
     @staticmethod
     def generateQueryBody(**kwargs):
         """
@@ -606,16 +613,14 @@ class DiscordScraper(object):
 
             # Determine if the value is true and if it doesn't contain the value of "NSFW".
             if value and key != 'nsfw':
-
                 # Append the partial query string to the parameters array.
                 parameters.append('has={0}'.format(key[:-1]))
-            
+
             # Determine if the value contains the text "NSFW".
             if value and key == 'nsfw':
-
                 # Append the partial query string to the parameters array.
                 parameters.append('include_nsfw={0}'.format(str(value).lower()))
-            
+
         # Join the array of partial URI parameters and return that value.
         return '&'.join(parameters)
 
