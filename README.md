@@ -60,7 +60,7 @@ Run the script to start the downloading process.
 - DM grabbing
 - Config options handling
 - Non-image and non-video embedded content grabbing
-- Text grabbing
+- Better structure and options for text grabbing
 
 ## Changelog
 **The dates below are in YYYY-MM-DD formatting (ISO 8601).**
