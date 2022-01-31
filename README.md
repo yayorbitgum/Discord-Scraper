@@ -55,18 +55,24 @@ Run the script to start the downloading process.
 ## Notes
 
 * You can copy in multiple channels on multiple guilds if you want to.
-* You must make modifications to the JSON file before running the script *(otherwise you'll end up with errors)*.
+* You must make modifications to the JSON file before running the script, otherwise you'll end up with errors.
 
 ## Missing Features
 
-- DM grabbing
-- Config options handling
-- Non-image and non-video embedded content grabbing
-- Text grabbing
+- DM grabbing.
+- Config options handling.
+- Non-image and non-video embedded content grabbing.
+- Better structuring and formatting for text grabbing.
 
 ## Changelog
 
 **The dates below are in YYYY-MM-DD formatting (ISO 8601).**
+
+2022-01-28 - Begin implementation of grabbing text from past messages:
+* Grabs username of author, and text content of the message.
+* Temporarily saves output to `scrapes/messages_test.txt`.
+* Included WordCloud script to generating word clouds from scraped text messages. Pretty entertaining!
+* Added console output (for now, the text message content) so you know what the script is doing and grabbing as it runs.
 
 2021-02-10 - Starting the path to finalizing the experimental branch:
 * Fixed a major oversight when it comes to scraping more than 25 posts for each day (more than 25 requires an offset query to be added to the undocumented API call).
