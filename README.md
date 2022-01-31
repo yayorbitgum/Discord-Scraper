@@ -1,5 +1,6 @@
 # Discord Scraper
 
+-----------
 ## Table of Contents
   - [Configuring](#configuring)
     - [Desktop Application:](#desktop-application)
@@ -8,6 +9,7 @@
   - [Missing Features](#missing-features)
   - [Changelog](#changelog)
   
+-----------
 ## Configuring
 
 ### Desktop Application:
@@ -52,23 +54,28 @@ Gather the channel ID that you want to scrape from by right-clicking on the chan
 **Step 7:**
 Run the script to start the downloading process.
 
+-----------
 ## Notes
 * You can copy in multiple channels on multiple guilds if you want to.
 * You must make modifications to the JSON file before running the script *(otherwise you'll end up with errors)*.
 
+-----------
 ## Missing Features
 - DM grabbing
 - Config options handling
 - Non-image and non-video embedded content grabbing
 - Better structure and options for text grabbing
 
-## Changelog
-**The dates below are in YYYY-MM-DD formatting (ISO 8601).**
+-----------
+## New Fork Changelog
 
 ### 2022-01-28 - Begin text grabbing implementation:
 * Temporarily saved to `scrapes/messages_test.txt/`.
 * Saves username of message author as well as message text content.
 * Added `cloud_of_words.py` script in `fun_graphing` directory for generating word clouds based on scraped text. Pretty neat!
+
+-----------
+## Original Changelog
 
 ### 2021-02-10 - Starting the path to finalizing the experimental branch:
 * Fixed a major oversight when it comes to scraping more than 25 posts for each day (more than 25 requires an offset query to be added to the undocumented API call).
