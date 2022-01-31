@@ -65,6 +65,11 @@ Run the script to start the downloading process.
 ## Changelog
 **The dates below are in YYYY-MM-DD formatting (ISO 8601).**
 
+### 2022-01-28 - Begin text grabbing implementation:
+* Temporarily saved to `scrapes/messages_test.txt/`.
+* Saves username of message author as well as message text content.
+* Added `cloud_of_words.py` script in `fun_graphing` directory for generating word clouds based on scraped text. Pretty neat!
+
 ### 2021-02-10 - Starting the path to finalizing the experimental branch:
 * Fixed a major oversight when it comes to scraping more than 25 posts for each day (more than 25 requires an offset query to be added to the undocumented API call).
 * Allowing for direct media grabbing alongside JSON caching to save on time (it was faster to grab both JSON and media simultaneously day-by-day as opposed to grabbing JSON data in bulk and then checking each JSON file afterwards).
