@@ -64,11 +64,17 @@ def startDM(scraper, alias, channel, day=None):
 
 
 def grab_text_message_content(data):
+    console_line_limit = 80
     with open("scrapes/messages_test.txt", "a", encoding="utf-8") as messages_file:
         for message in data['messages']:
             unpacked = message[0]
-            write_line = f"{unpacked['author']['username']}: {unpacked['content']}\n"
+            write_line = f"{unpacked['author']['username']}: {unpacked['content']}"
             messages_file.write(write_line)
+
+            if len(write_line) > console_line_limit:
+                print(f'SAVING: "{write_line[0:console_line_limit]}"...')
+            else:
+                print(f'SAVING: "{write_line}"')
 
 
 def startGuild(scraper, guild, channel, day=None):
@@ -190,8 +196,10 @@ if __name__ == '__main__':
 
     # Iterate through the guilds to scrape.
     for guild, channels in discordscraper.guilds.items():
+        print(f'Scraping {guild}...')
         # Iterate through the channels to scrape in the guild.
         for channel in channels:
+            print(f'\t- Scraping {channel}...')
             # Retrieve the datetime object for the most recent post in the channel.
             lastdate = getLastMessageGuild(discordscraper, guild, channel)
             # Start the scraper for the current channel.
